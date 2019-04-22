@@ -8,10 +8,9 @@ import java.util.Optional;
 
 @AllArgsConstructor
 public class VotingManager {
-    private Voting voting;
 
-    public boolean vote(String candidateId) {
-        Optional<Candidate> candidate = getCandidate(candidateId);
+    public static boolean vote(Voting voting, String candidateId) {
+        Optional<Candidate> candidate = getCandidate(voting,candidateId);
         if (candidate.isPresent()) {
             voting.addVote(candidate.get());
             return true;
@@ -19,25 +18,25 @@ public class VotingManager {
         return false;
     }
 
-    public boolean voterExist(String voterId) {
+    public static boolean voterExist(Voting voting, String voterId) {
         return voting.getVoters().stream()
                 .anyMatch(voter -> voter.getVoterId().equals(voterId));
     }
 
-    public boolean candidateExist(String candidateId) {
+    public static boolean candidateExist(Voting voting, String candidateId) {
         return voting.getCandidates().stream()
                 .anyMatch(candidate -> candidate.getCandidateId().equals(candidateId));
     }
 
-    public String getVotingName() {
+    public static String getVotingName(Voting voting) {
         return voting.getName();
     }
 
-    public Map<Candidate, Integer> getVotingResults() {
+    public static Map<Candidate, Integer> getVotingResults(Voting voting) {
         return voting.getVotingResults();
     }
 
-    private Optional<Candidate> getCandidate(String candidateId) {
+    private static Optional<Candidate> getCandidate(Voting voting, String candidateId) {
         return voting.getCandidates().stream()
                 .filter(candidate -> candidate.getCandidateId().equals(candidateId)).findFirst();
     }
