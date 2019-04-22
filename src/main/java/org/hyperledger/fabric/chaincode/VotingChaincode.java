@@ -58,9 +58,7 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             Voting voting = objectMapper.readValue(votingString, Voting.class);
-            //return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(voting.getCandidates())));
-            //TODO
-            return newErrorResponse();
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsBytes(voting.getCandidates()).toString())));
         } catch(Throwable e){
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
@@ -79,9 +77,8 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             Voting voting = objectMapper.readValue(votingString, Voting.class);
-            //return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(voting.getCandidates())));
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsBytes(voting.getVoters()).toString())));
             //TODO
-            return newErrorResponse();
         } catch(Throwable e){
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
@@ -136,9 +133,8 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             Voting voting = objectMapper.readValue(votingString, Voting.class);
-            //return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(voting.getCandidates())));
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsBytes(voting.getVotingResults()).toString())));
             //TODO
-            return newErrorResponse();
         } catch(Throwable e){
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
