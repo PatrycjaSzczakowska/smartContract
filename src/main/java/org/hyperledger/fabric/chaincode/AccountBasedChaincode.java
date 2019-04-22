@@ -62,6 +62,14 @@ public class AccountBasedChaincode extends ChaincodeBase {
         return newErrorResponse(responseError("Unsupported method", ""));
     }
 
+    //getCandidates
+
+    //getUsers ?
+
+    //vote
+
+    //getVoteResults
+
     private Response createWallet(ChaincodeStub stub, List<String> args) {
         if (args.size() != 2)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 2", ""));
