@@ -6,7 +6,7 @@ import java.util.List;
 public class VotingCreator {
     //List<> candidates, List <Voter> voters, Date startTime, int durarionInHours
     public static Voting createVoting() {
-        String name = "Voting no 1";
+        String name = "Voting1";
         List<Candidate> candidates = createCandidates();
         List<Voter> voters = createVoters();
 

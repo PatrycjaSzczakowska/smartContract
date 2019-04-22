@@ -18,15 +18,6 @@ public class VotingChaincode extends ChaincodeBase {
 
     @Override
     public Response init(ChaincodeStub stub) {
-        Voting voting = VotingCreator.createVoting();
-        try {
-            if (checkString(stub.getStringState(voting.getName()))) {
-                return newErrorResponse(responseError("Voting already exits", ""));
-            }
-            stub.putState(voting.getName(), (new ObjectMapper()).writeValueAsBytes(voting));
-        } catch (JsonProcessingException e) {
-            return newErrorResponse(responseError(e.getMessage(), ""));
-        }
         return newSuccessResponse(responseSuccess("Init"));
     }
 
@@ -34,7 +25,9 @@ public class VotingChaincode extends ChaincodeBase {
     public Response invoke(ChaincodeStub stub) {
         String func = stub.getFunction();
         List<String> params = stub.getParameters();
-        if (func.equals("getCandidates"))
+        if (func.equals("createVoting"))
+            return createVoting(stub, params);
+        else if (func.equals("getCandidates"))
             return getCandidates(stub, params);
         else if (func.equals("getUsers"))
             return getVoters(stub, params);
@@ -45,7 +38,27 @@ public class VotingChaincode extends ChaincodeBase {
         return newErrorResponse(responseError("Unsupported method", ""));
     }
 
-    //getCandidates
+    //{"Args":["createVoting","Voting1"]}
+    private Response createVoting(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 1)
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
+        String votingName = args.get(0);
+        if (!checkString(votingName))
+            return newErrorResponse(responseError("Invalid argument", ""));
+
+        Voting voting = VotingCreator.createVoting();
+        try {
+            if (checkString(stub.getStringState(voting.getName()))) {
+                return newErrorResponse(responseError("Voting already exits", ""));
+            }
+            stub.putState(voting.getName(), (new ObjectMapper()).writeValueAsBytes(voting));
+        } catch (JsonProcessingException e) {
+            return newErrorResponse(responseError(e.getMessage(), ""));
+        }
+        return newSuccessResponse(responseSuccess("Voting added"));
+    }
+
+    //{"Args":["getCandidates","Voting1"]}
     private Response getCandidates(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
@@ -64,7 +77,7 @@ public class VotingChaincode extends ChaincodeBase {
         }
     }
 
-    //getUsers ?
+    //{"Args":["getVoters","Voting1"]}
     private Response getVoters(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
@@ -84,7 +97,7 @@ public class VotingChaincode extends ChaincodeBase {
         }
     }
 
-    //vote
+    //{"Args":["vote","Voting1","V10", "P2"]}
     private Response vote(ChaincodeStub stub, List<String> args) {
         if (args.size() != 3)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 2", ""));
@@ -114,13 +127,12 @@ public class VotingChaincode extends ChaincodeBase {
                 return newSuccessResponse(responseSuccess("Voting went good"));
             }
             return newErrorResponse(responseError("Voting went wrong", ""));
-
-
         } catch (IOException e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
 
+    //{"Args":["getVoteResults","Voting1"]}
     private Response getVoteResults(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
