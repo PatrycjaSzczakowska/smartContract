@@ -12,7 +12,7 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 import static org.hyperledger.fabric.chaincode.ChaincodeResponse.responseError;
 import static org.hyperledger.fabric.chaincode.ChaincodeResponse.responseSuccess;
 
-public class AccountBasedChaincode extends ChaincodeBase {
+public class VotingChaincode extends ChaincodeBase {
     VotingManager votingManager;
 
     @Override
@@ -62,7 +62,7 @@ public class AccountBasedChaincode extends ChaincodeBase {
         }
         boolean votingFlag = votingManager.vote(candidateId);
         if (votingFlag) {
-            return newSuccessResponse(responseSuccess("Voted"));
+            return newSuccessResponse(responseSuccess("Voting went good"));
         }
         return newErrorResponse(responseError("Voting went wrong", ""));
     }
@@ -70,13 +70,13 @@ public class AccountBasedChaincode extends ChaincodeBase {
     private Response getVoteResults(ChaincodeStub stub) {
         try {
             stub.putState(votingManager.getVotingName(), (new ObjectMapper()).writeValueAsBytes(votingManager.getVotingResults()));
-            return newSuccessResponse(responseSuccess("Wallet created"));
+            return newSuccessResponse(responseSuccess("Results"));
         } catch (JsonProcessingException e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
 
     public static void main(String[] args) {
-        new AccountBasedChaincode().start(args);
+        new VotingChaincode().start(args);
     }
 }
