@@ -10,7 +10,7 @@ import java.util.Optional;
 public class VotingManager {
 
     public static boolean vote(Voting voting, String candidateId) {
-        Optional<Candidate> candidate = getCandidate(voting,candidateId);
+        Optional<Candidate> candidate = getCandidate(voting, candidateId);
         if (candidate.isPresent()) {
             voting.addVote(candidate.get());
             return true;

@@ -35,9 +35,9 @@ public class VotingChaincode extends ChaincodeBase {
         String func = stub.getFunction();
         List<String> params = stub.getParameters();
         if (func.equals("getCandidates"))
-            return getCandidates(stub,params);
+            return getCandidates(stub, params);
         else if (func.equals("getUsers"))
-            return getVoters(stub,params);
+            return getVoters(stub, params);
         else if (func.equals("vote"))
             return vote(stub, params);
         else if (func.equals("getVoteResults"))
@@ -46,7 +46,7 @@ public class VotingChaincode extends ChaincodeBase {
     }
 
     //getCandidates
-    private Response getCandidates(ChaincodeStub stub, List<String> args ) {
+    private Response getCandidates(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
         String votingName = args.get(0);
@@ -54,12 +54,12 @@ public class VotingChaincode extends ChaincodeBase {
             return newErrorResponse(responseError("Invalid argument", ""));
         try {
             String votingString = stub.getStringState(votingName);
-            if(!checkString(votingString))
+            if (!checkString(votingString))
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             Voting voting = objectMapper.readValue(votingString, Voting.class);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(voting.getCandidates()))));
-        } catch(Throwable e){
+        } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
@@ -73,13 +73,13 @@ public class VotingChaincode extends ChaincodeBase {
             return newErrorResponse(responseError("Invalid argument", ""));
         try {
             String votingString = stub.getStringState(votingName);
-            if(!checkString(votingString))
+            if (!checkString(votingString))
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             Voting voting = objectMapper.readValue(votingString, Voting.class);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(voting.getVoters()))));
             //TODO
-        } catch(Throwable e){
+        } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
@@ -88,7 +88,7 @@ public class VotingChaincode extends ChaincodeBase {
     private Response vote(ChaincodeStub stub, List<String> args) {
         if (args.size() != 3)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 2", ""));
-        String votingName= args.get(0);
+        String votingName = args.get(0);
         String voterId = args.get(1);
         String candidateId = args.get(2);
         if (!checkString(votingName) || !checkString(voterId) || !checkString(candidateId)) {
@@ -97,7 +97,7 @@ public class VotingChaincode extends ChaincodeBase {
 
         try {
             String votingString = stub.getStringState(votingName);
-            if(!checkString(votingString))
+            if (!checkString(votingString))
                 return newErrorResponse(responseError("Nonexistent voting", ""));
 
             ObjectMapper objectMapper = new ObjectMapper();
@@ -129,13 +129,13 @@ public class VotingChaincode extends ChaincodeBase {
             return newErrorResponse(responseError("Invalid argument", ""));
         try {
             String votingString = stub.getStringState(votingName);
-            if(!checkString(votingString))
+            if (!checkString(votingString))
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             Voting voting = objectMapper.readValue(votingString, Voting.class);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(voting.getVotingResults()))));
             //TODO
-        } catch(Throwable e){
+        } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
