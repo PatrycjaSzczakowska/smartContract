@@ -5,7 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class Candidate {
-    private String candidateId;
-    private String name;
+public class Voter {
+    private String voterId;
 }

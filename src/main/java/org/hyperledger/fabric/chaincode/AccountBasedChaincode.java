@@ -1,51 +1,24 @@
 package org.hyperledger.fabric.chaincode;
+
 import java.util.List;
-import org.hyperledger.fabric.chaincode.Models.Wallet;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hyperledger.fabric.chaincode.Models.VotingCreator;
+import org.hyperledger.fabric.chaincode.Models.VotingManager;
 import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.ChaincodeStub;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static org.hyperledger.fabric.chaincode.ChaincodeResponse.responseError;
+import static org.hyperledger.fabric.chaincode.ChaincodeResponse.responseSuccess;
 
 public class AccountBasedChaincode extends ChaincodeBase {
-    private class ChaincodeResponse {
-        public String message;
-        public String code;
-        public boolean OK;
-
-        public ChaincodeResponse(String message, String code, boolean OK) {
-            this.code = code;
-            this.message = message;
-            this.OK = OK;
-        }
-    }
-
-    private String responseError(String errorMessage, String code) {
-        try {
-            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(errorMessage, code, false));
-        } catch (Throwable e) {
-            return "{\"code\":'" + code + "', \"message\":'" + e.getMessage() + " AND " + errorMessage + "', \"OK\":" + false + "}";
-        }
-    }
-
-    private String responseSuccess(String successMessage) {
-        try {
-            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(successMessage, "", true));
-        } catch (Throwable e) {
-            return "{\"message\":'" + e.getMessage() + " BUT " + successMessage + " (NO COMMIT)', \"OK\":" + false + "}";
-        }
-    }
-
-    private String responseSuccessObject(String object) {
-        return "{\"message\":" + object + ", \"OK\":" + true + "}";
-    }
-
-    private boolean checkString(String str) {
-        if (str.trim().length() <= 0 || str == null)
-            return false;
-        return true;
-    }
+    VotingManager votingManager;
 
     @Override
     public Response init(ChaincodeStub stub) {
+        votingManager = new VotingManager(VotingCreator.createVoting());
+
         return newSuccessResponse(responseSuccess("Init"));
     }
 
@@ -53,109 +26,52 @@ public class AccountBasedChaincode extends ChaincodeBase {
     public Response invoke(ChaincodeStub stub) {
         String func = stub.getFunction();
         List<String> params = stub.getParameters();
-        if (func.equals("createWallet"))
-            return createWallet(stub, params);
-        else if (func.equals("getWallet"))
-            return getWallet(stub, params);
-        else if (func.equals("transfer"))
-            return transfer(stub, params);
+        if (func.equals("getCandidates"))
+            return getCandidates(stub);
+        else if (func.equals("getUsers"))
+            return getVoters(stub);
+        else if (func.equals("vote"))
+            return vote(stub, params);
+        else if (func.equals("getVoteResults"))
+            return getVoteResults(stub);
         return newErrorResponse(responseError("Unsupported method", ""));
     }
 
     //getCandidates
+    private Response getCandidates(ChaincodeStub stub) {
+        return null;
+    }
 
     //getUsers ?
-
+    private Response getVoters(ChaincodeStub stub) {
+        return null;
+    }
     //vote
 
-    //getVoteResults
-
-    private Response createWallet(ChaincodeStub stub, List<String> args) {
+    private Response vote(ChaincodeStub stub, List<String> args) {
         if (args.size() != 2)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 2", ""));
-        String walletId = args.get(0);
-        String tokenAmount = args.get(1);
-        if (!checkString(walletId) || !checkString(tokenAmount))
+        String voterId = args.get(0);
+        String candidateId = args.get(1);
+        if (!Utils.checkString(voterId) || !Utils.checkString(candidateId)) {
             return newErrorResponse(responseError("Invalid argument(s)", ""));
-
-        double tokenAmountDouble = 0.0;
-        try {
-            tokenAmountDouble = Double.parseDouble(tokenAmount);
-            if(tokenAmountDouble < 0.0)
-                return newErrorResponse(responseError("Invalid token amount", ""));
-        } catch (NumberFormatException e) {
-            return newErrorResponse(responseError("parseInt error", ""));
+        } else if (!votingManager.voterExist(voterId)) {
+            return newErrorResponse(responseError("Invalid voter ID)", ""));
+        } else if (!votingManager.candidateExist(candidateId)) {
+            return newErrorResponse(responseError("Invalid candidate ID)", ""));
         }
+        boolean votingFlag = votingManager.vote(candidateId);
+        if (votingFlag) {
+            return newSuccessResponse(responseSuccess("Voted"));
+        }
+        return newErrorResponse(responseError("Voting went wrong", ""));
+    }
 
-        Wallet wallet = new Wallet(walletId, tokenAmountDouble);
+    private Response getVoteResults(ChaincodeStub stub) {
         try {
-            if(checkString(stub.getStringState(walletId)))
-                return newErrorResponse(responseError("Existent wallet", ""));
-            stub.putState(walletId, (new ObjectMapper()).writeValueAsBytes(wallet));
+            stub.putState(votingManager.getVotingName(), (new ObjectMapper()).writeValueAsBytes(votingManager.getVotingResults()));
             return newSuccessResponse(responseSuccess("Wallet created"));
-        } catch (Throwable e) {
-            return newErrorResponse(responseError(e.getMessage(), ""));
-        }
-    }
-
-    private Response getWallet(ChaincodeStub stub, List<String> args) {
-        if (args.size() != 1)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
-        String walletId = args.get(0);
-        if (!checkString(walletId))
-            return newErrorResponse(responseError("Invalid argument", ""));
-        try {
-            String walletString = stub.getStringState(walletId);
-            if(!checkString(walletString))
-                return newErrorResponse(responseError("Nonexistent wallet", ""));
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(walletString)));
-        } catch(Throwable e){
-            return newErrorResponse(responseError(e.getMessage(), ""));
-        }
-    }
-
-    private Response transfer(ChaincodeStub stub, List<String> args) {
-        if (args.size() != 3)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 3", ""));
-        String fromWalletId = args.get(0);
-        String toWalletId = args.get(1);
-        String tokenAmount = args.get(2);
-        if (!checkString(fromWalletId) || !checkString(toWalletId) || !checkString(tokenAmount))
-            return newErrorResponse(responseError("Invalid argument(s)", ""));
-        if(fromWalletId.equals(toWalletId))
-            return newErrorResponse(responseError("From-wallet is same as to-wallet", ""));
-
-        double tokenAmountDouble = 0.0;
-        try {
-            tokenAmountDouble = Double.parseDouble(tokenAmount);
-            if(tokenAmountDouble < 0.0)
-                return newErrorResponse(responseError("Invalid token amount", ""));
-        } catch (NumberFormatException e) {
-            return newErrorResponse(responseError("parseDouble error", ""));
-        }
-
-        try {
-            String fromWalletString = stub.getStringState(fromWalletId);
-            if(!checkString(fromWalletString))
-                return newErrorResponse(responseError("Nonexistent from-wallet", ""));
-            String toWalletString = stub.getStringState(toWalletId);
-            if(!checkString(toWalletString))
-                return newErrorResponse(responseError("Nonexistent to-wallet", ""));
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            Wallet fromWallet = objectMapper.readValue(fromWalletString, Wallet.class);
-            Wallet toWallet = objectMapper.readValue(toWalletString, Wallet.class);
-
-            if(fromWallet.getTokenAmount() < tokenAmountDouble)
-                return newErrorResponse(responseError("Token amount not enough", ""));
-
-            fromWallet.setTokenAmount(fromWallet.getTokenAmount() - tokenAmountDouble);
-            toWallet.setTokenAmount(toWallet.getTokenAmount() + tokenAmountDouble);
-            stub.putState(fromWalletId, objectMapper.writeValueAsBytes(fromWallet));
-            stub.putState(toWalletId, objectMapper.writeValueAsBytes(toWallet));
-
-            return newSuccessResponse(responseSuccess("Transferred"));
-        } catch(Throwable e){
+        } catch (JsonProcessingException e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
