@@ -5,9 +5,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hyperledger.fabric.chaincode.Models.Voting;
-import org.hyperledger.fabric.chaincode.Models.VotingCreator;
-import org.hyperledger.fabric.chaincode.Models.VotingManager;
+import org.hyperledger.fabric.chaincode.Models.*;
 import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.ChaincodeStub;
 
@@ -27,17 +25,51 @@ public class VotingChaincode extends ChaincodeBase {
         List<String> params = stub.getParameters();
         if (func.equals("createVoting"))
             return createVoting(stub, params);
-        else if (func.equals("getCandidates"))
-            return getCandidates(stub, params);
-        else if (func.equals("getUsers"))
-            return getVoters(stub, params);
+        else if (func.equals("getCandidate"))
+            return getCandidate(stub, params);
+        else if (func.equals("getVoter"))
+            return getVoter(stub, params);
         else if (func.equals("vote"))
             return vote(stub, params);
         else if (func.equals("getVoteResults"))
             return getVoteResults(stub, params);
+        else if (func.equals("siema"))
+            return siema(stub, params);
+        else if (func.equals("getSiema"))
+            return getSiema(stub, params);
         return newErrorResponse(responseError("Unsupported method", ""));
     }
 
+    private Response siema(ChaincodeStub stub, List<String> args) {
+        Siema siema = new Siema(args.get(0), args.get(1));
+        try {
+            stub.putState(siema.getSiemaId(), (new ObjectMapper()).writeValueAsBytes(siema));
+        } catch (JsonProcessingException e) {
+            return newErrorResponse(responseError(e.getMessage(), ""));
+        }
+        return newSuccessResponse(responseSuccess("siema added"));
+    }
+
+    private Response getSiema(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 1)
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
+        String siemaId = args.get(0);
+        if (!checkString(siemaId))
+            return newErrorResponse(responseError("Invalid argument", ""));
+        try {
+            String siemaString = stub.getStringState(siemaId);
+            if (false)
+                return newErrorResponse(responseError("siema: " + siemaString, ""));
+            if (!checkString(siemaString))
+                return newErrorResponse(responseError("Nonexistent siema", ""));
+            ObjectMapper objectMapper = new ObjectMapper();
+            Siema siema = objectMapper.readValue(siemaString, Siema.class);
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(siema))));
+            //TODO
+        } catch (Throwable e) {
+            return newErrorResponse(responseError(e.getMessage(), ""));
+        }
+    }
     //{"Args":["createVoting","Voting1"]}
     private Response createVoting(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
@@ -49,9 +81,16 @@ public class VotingChaincode extends ChaincodeBase {
         Voting voting = VotingCreator.createVoting();
         try {
             if (checkString(stub.getStringState(voting.getName()))) {
-                return newErrorResponse(responseError("Voting already exits", ""));
+                // return newErrorResponse(responseError("Voting already exits", ""));
             }
-            stub.putState(voting.getName(), (new ObjectMapper()).writeValueAsBytes(voting));
+            for (Candidate candidate: voting.getCandidates()) {
+                stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
+            }
+
+            for (Voter voter: voting.getVoters()) {
+                stub.putState(voter.getVoterId(), (new ObjectMapper()).writeValueAsBytes(voter));
+            }
+
         } catch (JsonProcessingException e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
@@ -59,38 +98,38 @@ public class VotingChaincode extends ChaincodeBase {
     }
 
     //{"Args":["getCandidates","Voting1"]}
-    private Response getCandidates(ChaincodeStub stub, List<String> args) {
+    private Response getCandidate(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
-        String votingName = args.get(0);
-        if (!checkString(votingName))
+        String candidateId = args.get(0);
+        if (!checkString(candidateId))
             return newErrorResponse(responseError("Invalid argument", ""));
         try {
-            String votingString = stub.getStringState(votingName);
-            if (!checkString(votingString))
+            String candidateString = stub.getStringState(candidateId);
+            if (!checkString(candidateString))
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
-            Voting voting = objectMapper.readValue(votingString, Voting.class);
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(voting.getCandidates()))));
+            Candidate candidate = objectMapper.readValue(candidateString, Candidate.class);
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(candidate))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
 
     //{"Args":["getVoters","Voting1"]}
-    private Response getVoters(ChaincodeStub stub, List<String> args) {
+    private Response getVoter(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
-        String votingName = args.get(0);
-        if (!checkString(votingName))
+        String voterId = args.get(0);
+        if (!checkString(voterId))
             return newErrorResponse(responseError("Invalid argument", ""));
         try {
-            String votingString = stub.getStringState(votingName);
-            if (!checkString(votingString))
+            String voterString = stub.getStringState(voterId);
+            if (!checkString(voterString))
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
-            Voting voting = objectMapper.readValue(votingString, Voting.class);
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(voting.getVoters()))));
+            Voter voter = objectMapper.readValue(voterString, Voter.class);
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(voter))));
             //TODO
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
@@ -99,37 +138,23 @@ public class VotingChaincode extends ChaincodeBase {
 
     //{"Args":["vote","Voting1","V10", "P2"]}
     private Response vote(ChaincodeStub stub, List<String> args) {
-        if (args.size() != 3)
+        if (args.size() != 2)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 2", ""));
-        String votingName = args.get(0);
-        String voterId = args.get(1);
-        String candidateId = args.get(2);
-        if (!checkString(votingName) || !checkString(voterId) || !checkString(candidateId)) {
-            return newErrorResponse(responseError("Invalid argument(s)", ""));
-        }
-
-        try {
-            String votingString = stub.getStringState(votingName);
-            if (!checkString(votingString))
-                return newErrorResponse(responseError("Nonexistent voting", ""));
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            Voting voting = objectMapper.readValue(votingString, Voting.class);
-
-            if (!VotingManager.voterExist(voting, voterId)) {
-                return newErrorResponse(responseError("Invalid voter ID)", ""));
-            } else if (!VotingManager.candidateExist(voting, candidateId)) {
-                return newErrorResponse(responseError("Invalid candidate ID)", ""));
-            }
-            boolean votingFlag = VotingManager.vote(voting, candidateId);
-            if (votingFlag) {
-                stub.putState(votingName, objectMapper.writeValueAsBytes(voting));
+        String voterId = args.get(0);
+        String candidateId = args.get(1);
+        Voter voter = new Voter(voterId);
+        Candidate candidate = new Candidate(candidateId);
+        if (voter.vote(candidateId)) {
+            candidate.addVote();
+            try {
+                stub.putState(voter.getVoterId(), (new ObjectMapper()).writeValueAsBytes(voter));
+                stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
                 return newSuccessResponse(responseSuccess("Voting went good"));
+            } catch (IOException e) {
+                return newErrorResponse(responseError(e.getMessage(), ""));
             }
-            return newErrorResponse(responseError("Voting went wrong", ""));
-        } catch (IOException e) {
-            return newErrorResponse(responseError(e.getMessage(), ""));
         }
+        return newSuccessResponse(responseSuccess("Voter has already voted"));
     }
 
     //{"Args":["getVoteResults","Voting1"]}

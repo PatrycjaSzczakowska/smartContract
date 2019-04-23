@@ -1,13 +1,17 @@
 package org.hyperledger.fabric.chaincode;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
 public class ChaincodeResponse {
     public String message;
     public String code;
     public boolean OK;
+
+    public ChaincodeResponse(String message, String code, boolean OK) {
+        this.message = message;
+        this.code = code;
+        this.OK = OK;
+    }
 
     public static String responseError(String errorMessage, String code) {
         try {

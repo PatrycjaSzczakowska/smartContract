@@ -15,8 +15,8 @@ public class VotingCreator {
 
     private static List<Candidate> createCandidates() {
         List<Candidate> candidates = new ArrayList<>();
-        candidates.add(new Candidate("P1", "Paweł Nowak"));
-        candidates.add(new Candidate("P2", "Anna Kowalska"));
+        candidates.add(new Candidate("P1"));
+        candidates.add(new Candidate("P2"));
         return candidates;
     }
 

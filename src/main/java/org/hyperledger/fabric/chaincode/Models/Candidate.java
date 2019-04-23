@@ -1,11 +1,33 @@
 package org.hyperledger.fabric.chaincode.Models;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-@Getter
-@AllArgsConstructor
 public class Candidate {
     private String candidateId;
-    private String name;
+    private int votes;
+
+    public Candidate() {}
+
+    public Candidate(String candidateId) {
+        this.candidateId = candidateId;
+        votes = 0;
+    }
+
+    public String getCandidateId() {
+        return candidateId;
+    }
+
+    public int getVotes() {
+        return votes;
+    }
+
+    public void setCandidateId(String candidateId) {
+        this.candidateId = candidateId;
+    }
+
+    public void setVotes(int votes) {
+        this.votes = votes;
+    }
+
+    public void addVote() {
+        votes++;
+    }
 }

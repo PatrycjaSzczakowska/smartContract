@@ -1,13 +1,13 @@
 package org.hyperledger.fabric.chaincode.Models;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.util.Map;
 import java.util.Optional;
 
-@AllArgsConstructor
 public class VotingManager {
+
+    public VotingManager() {
+
+    }
 
     public static boolean vote(Voting voting, String candidateId) {
         Optional<Candidate> candidate = getCandidate(voting, candidateId);
