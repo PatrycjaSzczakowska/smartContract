@@ -2,13 +2,18 @@ package org.hyperledger.fabric.chaincode;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.hyperledger.fabric.chaincode.Models.*;
 import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.ChaincodeStub;
+
 
 import static org.hyperledger.fabric.chaincode.ChaincodeResponse.*;
 import static org.hyperledger.fabric.chaincode.Utils.checkString;
@@ -50,17 +55,33 @@ public class VotingChaincode extends ChaincodeBase {
             if (checkString(stub.getStringState(voting.getName()))) {
                 // return newErrorResponse(responseError("Voting already exits", ""));
             }
-            List<String> candidateIds = new ArrayList<>();
+
+            //candidates
+            JsonArray json;
+            json = new JsonArray();
             for (Candidate candidate: voting.getCandidates()) {
                 stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
-                candidateIds.add(candidate.getCandidateId());
+                json.add(candidate.getCandidateId());
+
             }
+            stub.putState("candidatesList", (new ObjectMapper()).writeValueAsBytes(json.toString()));
 
-            stub.putState("candidatesList", (new ObjectMapper()).writeValueAsBytes(candidateIds));
-
+            //voters
             for (Voter voter: voting.getVoters()) {
                 stub.putState(voter.getVoterId(), (new ObjectMapper()).writeValueAsBytes(voter));
             }
+
+            //committees
+            json = new JsonArray();
+            for (Committee committee: voting.getCommittees()) {
+                JsonObject obj = new JsonObject();
+                obj.add("committeeId", new JsonPrimitive(committee.committeeId));
+                obj.add("votesNo", new JsonPrimitive(committee.votesNo + ""));
+                json.add(obj);
+
+            }
+            stub.putState("committeesList", (new ObjectMapper()).writeValueAsBytes(json.toString()));
+
 
         } catch (JsonProcessingException e) {
             return newErrorResponse(responseError(e.getMessage(), ""));

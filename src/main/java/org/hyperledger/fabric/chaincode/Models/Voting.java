@@ -9,15 +9,17 @@ public class Voting {
     private Map<Candidate, Integer> votingResults;
     private List<Candidate> candidates;
     private List<Voter> voters;
+    private List<Committee> committees;
 
     public Voting() {
 
     }
 
-    public Voting(String name, List<Candidate> candidates, List<Voter> voters) {
+    public Voting(String name, List<Candidate> candidates, List<Voter> voters, List<Committee> committees) {
         this.name = name;
         this.candidates = candidates;
         this.voters = voters;
+        this.committees = committees;
         setupVotingResultsMap();
     }
 
@@ -38,6 +40,10 @@ public class Voting {
 
     public List<Voter> getVoters() {
         return voters;
+    }
+
+    public List<Committee> getCommittees() {
+        return committees;
     }
 
     public Map<Candidate, Integer> getVotingResults() {

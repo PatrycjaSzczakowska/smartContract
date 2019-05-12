@@ -9,8 +9,9 @@ public class VotingCreator {
         String name = "Voting1";
         List<Candidate> candidates = createCandidates();
         List<Voter> voters = createVoters();
+        List<Committee> committees = createCommittees();
 
-        return new Voting(name, candidates, voters);
+        return new Voting(name, candidates, voters, committees);
     }
 
     private static List<Candidate> createCandidates() {
@@ -18,6 +19,13 @@ public class VotingCreator {
         candidates.add(new Candidate("P1"));
         candidates.add(new Candidate("P2"));
         return candidates;
+    }
+
+    private static List<Committee> createCommittees() {
+        List<Committee> committees = new ArrayList<>();
+        committees.add(new Committee("COM1", 20));
+        committees.add(new Committee("COM2", 20));
+        return committees;
     }
 
     private static List<Voter> createVoters() {
