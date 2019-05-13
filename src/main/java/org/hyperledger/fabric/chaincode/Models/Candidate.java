@@ -2,32 +2,79 @@ package org.hyperledger.fabric.chaincode.Models;
 
 public class Candidate {
     private String candidateId;
-    private int votes;
+    private String firstName;
+    private String lastName;
+    private String party;
+    private int partyNo; //number on the list
+    private int listNo; //number of the list
+    private int age;
 
-    public Candidate() {}
+    public Candidate() {
+    }
 
-    public Candidate(String candidateId) {
+    public Candidate(String candidateId, String firstName, String lastName, String party, int partyNo, int listNo, int age) {
         this.candidateId = candidateId;
-        votes = 0;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.party = party;
+        this.partyNo = partyNo;
+        this.listNo = listNo;
+        this.age = age;
     }
 
     public String getCandidateId() {
         return candidateId;
     }
 
-    public int getVotes() {
-        return votes;
-    }
-
     public void setCandidateId(String candidateId) {
         this.candidateId = candidateId;
     }
 
-    public void setVotes(int votes) {
-        this.votes = votes;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void addVote() {
-        votes++;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getParty() {
+        return party;
+    }
+
+    public void setParty(String party) {
+        this.party = party;
+    }
+
+    public int getPartyNo() {
+        return partyNo;
+    }
+
+    public void setPartyNo(int partyNo) {
+        this.partyNo = partyNo;
+    }
+
+    public int getListNo() {
+        return listNo;
+    }
+
+    public void setListNo(int listNo) {
+        this.listNo = listNo;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
     }
 }

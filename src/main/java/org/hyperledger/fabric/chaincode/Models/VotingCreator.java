@@ -8,16 +8,15 @@ public class VotingCreator {
     public static Voting createVoting() {
         String name = "Voting1";
         List<Candidate> candidates = createCandidates();
-        List<Voter> voters = createVoters();
         List<Committee> committees = createCommittees();
 
-        return new Voting(name, candidates, voters, committees);
+        return new Voting(name, candidates, committees);
     }
 
     private static List<Candidate> createCandidates() {
         List<Candidate> candidates = new ArrayList<>();
-        candidates.add(new Candidate("P1"));
-        candidates.add(new Candidate("P2"));
+        candidates.add(new Candidate("P1","x","x","x", 1,2,3));
+        candidates.add(new Candidate("P2","x","x","x", 1,2,3));
         return candidates;
     }
 
@@ -26,13 +25,5 @@ public class VotingCreator {
         committees.add(new Committee("COM1", 20));
         committees.add(new Committee("COM2", 20));
         return committees;
-    }
-
-    private static List<Voter> createVoters() {
-        List<Voter> voters = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            voters.add(new Voter("V".concat(String.valueOf(i))));
-        }
-        return voters;
     }
 }

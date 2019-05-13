@@ -6,28 +6,17 @@ import java.util.Map;
 
 public class Voting {
     private String name;
-    private Map<Candidate, Integer> votingResults;
     private List<Candidate> candidates;
-    private List<Voter> voters;
     private List<Committee> committees;
 
     public Voting() {
 
     }
 
-    public Voting(String name, List<Candidate> candidates, List<Voter> voters, List<Committee> committees) {
+    public Voting(String name, List<Candidate> candidates, List<Committee> committees) {
         this.name = name;
         this.candidates = candidates;
-        this.voters = voters;
         this.committees = committees;
-        setupVotingResultsMap();
-    }
-
-    private void setupVotingResultsMap() {
-        votingResults = new HashMap<>();
-        for (Candidate candidate : candidates) {
-            votingResults.put(candidate, 0);
-        }
     }
 
     public String getName() {
@@ -38,19 +27,8 @@ public class Voting {
         return candidates;
     }
 
-    public List<Voter> getVoters() {
-        return voters;
-    }
-
     public List<Committee> getCommittees() {
         return committees;
     }
 
-    public Map<Candidate, Integer> getVotingResults() {
-        return votingResults;
-    }
-
-    public void addVote(Candidate candidate) {
-        votingResults.put(candidate, votingResults.get(candidate) + 1);
-    }
 }
