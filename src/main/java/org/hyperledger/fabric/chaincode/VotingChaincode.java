@@ -107,10 +107,11 @@ public class VotingChaincode extends ChaincodeBase {
 
     //{"Args":["vote","Voting1","V10", "P2"]}
     private Response vote(ChaincodeStub stub, List<String> args) {
-        if (args.size() != 2)
+        if (args.size() != 3)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 2", ""));
         String voterId = args.get(0);
         String candidateId = args.get(1);
+        String committeeId = args.get(2);
 
         try {
             String candidateString = stub.getStringState(candidateId);
@@ -123,6 +124,8 @@ public class VotingChaincode extends ChaincodeBase {
             if (!checkString(voterString))
                 return newErrorResponse(responseError("Nonexistent voter", ""));
             objectMapper = new ObjectMapper();
+
+            stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
 
 //            if (voter.vote(candidateId)) {
 //                candidate.addVote();
