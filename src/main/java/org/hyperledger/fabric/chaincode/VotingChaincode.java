@@ -32,17 +32,17 @@ public class VotingChaincode extends ChaincodeBase {
         if (func.equals("createVoting"))
             return createVoting(stub, params);
         else if (func.equals("getCandidates"))
-            return getCandidate(stub, params);
+            return getCandidates(stub, params);
         else if (func.equals("vote"))
             return vote(stub, params);
         else if (func.equals("getResultsByCandidates"))
             return getVoteResults(stub, params);
         else if (func.equals("getResultsByParties"))
-            return getCandidate(stub, params);
+            return getCandidates(stub, params);
         else if (func.equals("beginVoting"))
-            return getCandidate(stub, params);
+            return getCandidates(stub, params);
         else if (func.equals("endVoting"))
-            return getCandidate(stub, params);
+            return getCandidates(stub, params);
         return newErrorResponse(responseError("Unsupported method", ""));
     }
 
@@ -86,19 +86,17 @@ public class VotingChaincode extends ChaincodeBase {
     }
 
     //{"Args":["getCandidates","Voting1"]}
-    private Response getCandidate(ChaincodeStub stub, List<String> args) {
-        if (args.size() != 1)
+    private Response getCandidates(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 0)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
-        String candidateId = args.get(0);
-        if (!checkString(candidateId))
-            return newErrorResponse(responseError("Invalid argument", ""));
         try {
-            String candidateString = stub.getStringState(candidateId);
-            if (!checkString(candidateString))
+            String candidatesString = stub.getStringState("candidatesList");
+            if (!checkString(candidatesString))
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
-            Candidate candidate = objectMapper.readValue(candidateString, Candidate.class);
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(candidate))));
+            String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
+            // JsonArray json = new JsonArray(candidatesJsonString);
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(candidatesJsonString))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
@@ -114,7 +112,7 @@ public class VotingChaincode extends ChaincodeBase {
         String committeeId = args.get(2);
 
         try {
-            String candidateString = stub.getStringState(candidateId);
+            String candidateString = stub.getStringState("");
             if (!checkString(candidateString))
                 return newErrorResponse(responseError("Nonexistent candidate", ""));
             ObjectMapper objectMapper = new ObjectMapper();
