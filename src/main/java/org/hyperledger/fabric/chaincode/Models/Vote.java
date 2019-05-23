@@ -3,15 +3,13 @@ package org.hyperledger.fabric.chaincode.Models;
 public class Vote {
     private String tokenId; //id
     private String candidateId; //vote for...
-    private String committeId; // neccessary?
 
     public Vote() {
     }
 
-    public Vote(String tokenId, String candidateId, String committeId) {
+    public Vote(String tokenId, String candidateId) {
         this.tokenId = tokenId;
         this.candidateId = candidateId;
-        this.committeId = committeId;
     }
 
     public String getTokenId() {
@@ -28,13 +26,5 @@ public class Vote {
 
     public void setCandidateId(String candidateId) {
         this.candidateId = candidateId;
-    }
-
-    public String getCommitteId() {
-        return committeId;
-    }
-
-    public void setCommitteId(String committeId) {
-        this.committeId = committeId;
     }
 }

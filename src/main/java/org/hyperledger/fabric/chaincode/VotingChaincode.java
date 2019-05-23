@@ -33,32 +33,34 @@ public class VotingChaincode extends ChaincodeBase {
             return createVoting(stub, params);
         else if (func.equals("getCandidates"))
             return getCandidates(stub, params);
-        else if (func.equals("getCommittee"))
-            return getCommittee(stub, params);
+        else if (func.equals("getCommittees"))
+            return getCommittees(stub, params);
         else if (func.equals("getCommitteeById"))
             return getCommitteeById(stub, params);
         else if (func.equals("vote"))
             return vote(stub, params);
-        else if (func.equals("getResultsByCandidates"))
-            return getVoteResults(stub, params);
-        else if (func.equals("getResultsByParties"))
-            return getCandidates(stub, params);
-        else if (func.equals("beginVoting"))
-            return getCandidates(stub, params);
-        else if (func.equals("endVoting"))
-            return getCandidates(stub, params);
+        else if (func.equals("getVote"))
+            return getVoteByTokenId(stub, params);
+//        else if (func.equals("getResultsByCandidates"))
+//            return getVoteResults(stub, params);
+//        else if (func.equals("getResultsByParties"))
+//            return getCandidates(stub, params);
+//        else if (func.equals("beginVoting"))
+//            return getCandidates(stub, params);
+//        else if (func.equals("endVoting"))
+//            return getCandidates(stub, params);
         return newErrorResponse(responseError("Unsupported method", ""));
     }
 
     //{"Args":["createVoting"]}
     private Response createVoting(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0", ""));
         Voting voting = VotingCreator.createVoting();
         try {
-            if (checkString(stub.getStringState(voting.getName()))) {
-                // return newErrorResponse(responseError("Voting already exits", ""));
-            }
+//            if (checkString(stub.getStringState(voting.getName()))) {
+//                // return newErrorResponse(responseError("Voting already exits", ""));
+//            }
 
             //candidates
             JsonArray candidatesJsonArray;
@@ -79,19 +81,8 @@ public class VotingChaincode extends ChaincodeBase {
                 committeesJsonArray.add(committee.getCommitteeId());
 
                 //putting single committee object into blockchain
-//                JsonObject committeeJsonObject = new JsonObject();
-//                committeeJsonObject.add("committeeId", new JsonPrimitive(committee.getCommitteeId()));
-//                committeeJsonObject.add("votesNo", new JsonPrimitive(committee.getVotesNo() + ""));
-//
-//                JsonArray tokensJsonArray = new JsonArray();
-//                for (String tokenId : committee.getVotes()) {
-//                    tokensJsonArray.add(tokenId);
-//                }
-//                committeeJsonObject.add("tokenIds", tokensJsonArray);
-
                 stub.putState(committee.getCommitteeId(), (new ObjectMapper()).writeValueAsBytes(committee));
             }
-
             stub.putState("committeesList", (new ObjectMapper()).writeValueAsBytes(committeesJsonArray.toString()));
 
         } catch (JsonProcessingException e) {
@@ -117,14 +108,14 @@ public class VotingChaincode extends ChaincodeBase {
         }
     }
 
-    //{"Args":["getCommittee"]}
-    private Response getCommittee(ChaincodeStub stub, List<String> args) {
+    //{"Args":["getCommittees"]}
+    private Response getCommittees(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
         try {
             String committeeString = stub.getStringState("committeesList");
             if (!checkString(committeeString))
-                return newErrorResponse(responseError("Nonexistent voting", ""));
+                return newErrorResponse(responseError("Nonexistent committees list", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             String committeesJsonString = objectMapper.readValue(committeeString, String.class);
             // JsonArray json = new JsonArray(candidatesJsonString);
@@ -136,7 +127,7 @@ public class VotingChaincode extends ChaincodeBase {
 
     //{"Args":["getCommittee"]}
     private Response getCommitteeById(ChaincodeStub stub, List<String> args) {
-        if (args.size() != 0)
+        if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
         try {
             String committeeString = stub.getStringState(args.get(0));
@@ -151,66 +142,62 @@ public class VotingChaincode extends ChaincodeBase {
         }
     }
 
-
-
-    //{"Args":["vote","Voting1","V10", "P2"]}
+    //{"Args":["vote","V10", "P2", "T1111"]}
     private Response vote(ChaincodeStub stub, List<String> args) {
         if (args.size() != 3)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 2", ""));
-        String voterId = args.get(0);
-        String candidateId = args.get(1);
-        String committeeId = args.get(2);
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 3", ""));
+        String candidateId = args.get(0);
+        String committeeId = args.get(1);
+        String tokenId = args.get(2);
 
         try {
-            String candidateString = stub.getStringState("");
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            //is committee valid?
+            String committeeString = stub.getStringState(committeeId);
+            if (!checkString(committeeString))
+                return newErrorResponse(responseError("Nonexistent committee", ""));
+            Committee committee = objectMapper.readValue(committeeString, Committee.class);
+            if (committee.getVotes().size() + 1 > committee.getVotesNo())
+                return newErrorResponse(responseError("You can't add more votes to this committee", ""));
+
+            //is candidate valid?
+            String candidateString = stub.getStringState(candidateId);
             if (!checkString(candidateString))
                 return newErrorResponse(responseError("Nonexistent candidate", ""));
-            ObjectMapper objectMapper = new ObjectMapper();
-            Candidate candidate = objectMapper.readValue(candidateString, Candidate.class);
 
-            String voterString = stub.getStringState(voterId);
-            if (!checkString(voterString))
-                return newErrorResponse(responseError("Nonexistent voter", ""));
-            objectMapper = new ObjectMapper();
+            //is tokenId valid?
+            String tokenString = stub.getStringState(candidateId);
+            if (checkString(tokenString))
+                return newErrorResponse(responseError("The vote with the given token has already been given", ""));
 
-            stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
+            //vote
+            Vote vote = new Vote(tokenId, candidateId);
+            stub.putState(vote.getTokenId(), (new ObjectMapper()).writeValueAsBytes(vote));
 
-//            if (voter.vote(candidateId)) {
-//                candidate.addVote();
-//                try {
-//                    stub.putState(voter.getVoterId(), (new ObjectMapper()).writeValueAsBytes(voter));
-//                    stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
-//                    return newSuccessResponse(responseSuccess("Voting went good"));
-//                } catch (IOException e) {
-//                    return newErrorResponse(responseError(e.getMessage(), ""));
-//                }
-//            }
+            //adding tokenId to committee
+            committee.addVote(tokenId);
+            stub.putState(committee.getCommitteeId(), (new ObjectMapper()).writeValueAsBytes(committee));
 
-            return newSuccessResponse(responseSuccess("Voter has already voted"));
+            return newSuccessResponse(responseSuccess("Voted successfully\n"));
 
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
-
-
     }
 
-    //{"Args":["getVoteResults"]}
-    private Response getVoteResults(ChaincodeStub stub, List<String> args) {
+
+    //{"Args":["getVote","123"]}
+    private Response getVoteByTokenId(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 1)
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
         try {
-            String candidatesListString = stub.getStringState("candidatesIds");
-            if (!checkString(candidatesListString))
-                return newErrorResponse(responseError("Nonexistent candidatesIds", ""));
+            String voteString = stub.getStringState(args.get(0));
+            if (!checkString(voteString))
+                return newErrorResponse(responseError("Nonexistent vote", ""));
             ObjectMapper objectMapper = new ObjectMapper();
-            CandidatesList candidatesList = objectMapper.readValue(candidatesListString, CandidatesList.class);
-            String response = "";
-            for (String candidateId : candidatesList.getCandidateIds()) {
-                String candidateString = stub.getStringState(candidateId);
-                objectMapper = new ObjectMapper();
-                Candidate candidate = objectMapper.readValue(candidateString, Candidate.class);
-                response += (new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(candidate))) + "\n";
-            }
-            return newSuccessResponse(response);
+            Vote vote = objectMapper.readValue(voteString, Vote.class);
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(vote))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
