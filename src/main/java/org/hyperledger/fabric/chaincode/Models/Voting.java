@@ -1,8 +1,6 @@
 package org.hyperledger.fabric.chaincode.Models;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Voting {
     private String name;

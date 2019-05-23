@@ -14,7 +14,7 @@ public class Committee {
     public Committee(String committeeId, int votesNo) {
         this.committeeId = committeeId;
         this.votesNo = votesNo;
-        this.votes=new ArrayList<>();
+        this.votes = new ArrayList<>();
     }
 
     public Committee(String committeeId, int votesNo, List<String> votes) {
@@ -47,7 +47,7 @@ public class Committee {
         this.votes = votes;
     }
 
-    public void addVote(String tokenId){
+    public void addVote(String tokenId) {
         votes.add(tokenId);
     }
 }
