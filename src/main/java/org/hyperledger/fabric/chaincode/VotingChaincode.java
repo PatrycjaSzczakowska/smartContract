@@ -35,8 +35,8 @@ public class VotingChaincode extends ChaincodeBase {
             return getCandidates(stub, params);
         else if (func.equals("getCommittees"))
             return getCommittees(stub, params);
-        else if (func.equals("getCommitteeById"))
-            return getCommitteeById(stub, params);
+        else if (func.equals("getCommittee"))
+            return getCommittee(stub, params);
         else if (func.equals("vote"))
             return vote(stub, params);
         else if (func.equals("getVote"))
@@ -58,10 +58,6 @@ public class VotingChaincode extends ChaincodeBase {
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 0", ""));
         Voting voting = VotingCreator.createVoting();
         try {
-//            if (checkString(stub.getStringState(voting.getName()))) {
-//                // return newErrorResponse(responseError("Voting already exits", ""));
-//            }
-
             //candidates
             JsonArray candidatesJsonArray;
             candidatesJsonArray = new JsonArray();
@@ -94,15 +90,15 @@ public class VotingChaincode extends ChaincodeBase {
     //{"Args":["getCandidates"]}
     private Response getCandidates(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0", ""));
         try {
             String candidatesString = stub.getStringState("candidatesList");
             if (!checkString(candidatesString))
-                return newErrorResponse(responseError("Nonexistent voting", ""));
+                return newErrorResponse(responseError("Nonexistent candidates list", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
-            // JsonArray json = new JsonArray(candidatesJsonString);
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(candidatesJsonString))));
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(
+                    (new ObjectMapper()).writeValueAsString(candidatesJsonString))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
@@ -111,22 +107,22 @@ public class VotingChaincode extends ChaincodeBase {
     //{"Args":["getCommittees"]}
     private Response getCommittees(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0", ""));
         try {
             String committeeString = stub.getStringState("committeesList");
             if (!checkString(committeeString))
                 return newErrorResponse(responseError("Nonexistent committees list", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             String committeesJsonString = objectMapper.readValue(committeeString, String.class);
-            // JsonArray json = new JsonArray(candidatesJsonString);
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(committeesJsonString))));
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(
+                    (new ObjectMapper()).writeValueAsString(committeesJsonString))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
 
-    //{"Args":["getCommittee"]}
-    private Response getCommitteeById(ChaincodeStub stub, List<String> args) {
+    //{"Args":["getCommittee","COM1"]}
+    private Response getCommittee(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
         try {
@@ -142,10 +138,11 @@ public class VotingChaincode extends ChaincodeBase {
         }
     }
 
-    //{"Args":["vote","V10", "P2", "T1111"]}
+    //{"Args":["vote","P1", "V10", "123"]}
     private Response vote(ChaincodeStub stub, List<String> args) {
         if (args.size() != 3)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 3", ""));
+
         String candidateId = args.get(0);
         String committeeId = args.get(1);
         String tokenId = args.get(2);
@@ -168,8 +165,8 @@ public class VotingChaincode extends ChaincodeBase {
 
             //is tokenId valid?
             String tokenString = stub.getStringState(candidateId);
-//            if (checkString(tokenString))
-//                return newErrorResponse(responseError("The vote with the given token has already been given", ""));
+            if (checkString(tokenString))
+                return newErrorResponse(responseError("The vote with the given token has already been given", ""));
 
             //vote
             Vote vote = new Vote(tokenId, candidateId);

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VotingCreator {
-    //List<> candidates, List <Voter> voters, Date startTime, int durarionInHours
+    //List<> candidates, List <Voter> voters
     public static Voting createVoting() {
         String name = "Voting1";
         List<Candidate> candidates = createCandidates();
@@ -15,8 +15,8 @@ public class VotingCreator {
 
     private static List<Candidate> createCandidates() {
         List<Candidate> candidates = new ArrayList<>();
-        candidates.add(new Candidate("P1","x","x","x", 1,2,3));
-        candidates.add(new Candidate("P2","x","x","x", 1,2,3));
+        candidates.add(new Candidate("P1", "x", "x", "x", 1, 2, 3));
+        candidates.add(new Candidate("P2", "x", "x", "x", 1, 2, 3));
         return candidates;
     }
 
