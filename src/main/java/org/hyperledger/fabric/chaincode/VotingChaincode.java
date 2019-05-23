@@ -164,9 +164,9 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Nonexistent candidate", ""));
 
             //is tokenId valid?
-            String tokenString = stub.getStringState(candidateId);
+            String tokenString = stub.getStringState(tokenId);
             if (checkString(tokenString))
-                return newErrorResponse(responseError("The vote with the given token has already been given", ""));
+                return newErrorResponse(responseError(tokenString, ""));
 
             //vote
             Vote vote = new Vote(tokenId, candidateId);
