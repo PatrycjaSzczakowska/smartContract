@@ -35,6 +35,8 @@ public class VotingChaincode extends ChaincodeBase {
             return getCandidates(stub, params);
         else if (func.equals("getCommittee"))
             return getCommittee(stub, params);
+        else if (func.equals("getCommitteeById"))
+            return getCommitteeById(stub, params);
         else if (func.equals("vote"))
             return vote(stub, params);
         else if (func.equals("getResultsByCandidates"))
@@ -127,6 +129,23 @@ public class VotingChaincode extends ChaincodeBase {
             String committeesJsonString = objectMapper.readValue(committeeString, String.class);
             // JsonArray json = new JsonArray(candidatesJsonString);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(committeesJsonString))));
+        } catch (Throwable e) {
+            return newErrorResponse(responseError(e.getMessage(), ""));
+        }
+    }
+
+    //{"Args":["getCommittee"]}
+    private Response getCommitteeById(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 0)
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1", ""));
+        try {
+            String committeeString = stub.getStringState(args.get(0));
+            if (!checkString(committeeString))
+                return newErrorResponse(responseError("Nonexistent voting", ""));
+            ObjectMapper objectMapper = new ObjectMapper();
+            Committee committee = objectMapper.readValue(committeeString, Committee.class);
+            // JsonArray json = new JsonArray(candidatesJsonString);
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(committee))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
