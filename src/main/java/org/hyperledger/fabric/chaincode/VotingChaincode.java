@@ -1,9 +1,7 @@
 package org.hyperledger.fabric.chaincode;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,10 +40,12 @@ public class VotingChaincode extends ChaincodeBase {
             return vote(stub, params);
         else if (func.equals("getVote"))
             return getVoteByTokenId(stub, params);
-//        else if (func.equals("getResultsByCandidates"))
-//            return getVoteResults(stub, params);
-//        else if (func.equals("getResultsByParties"))
-//            return getCandidates(stub, params);
+        else if (func.equals("getVotes"))
+            return getVotes(stub, params);
+        else if (func.equals("getResultsByCandidates"))
+            return getResultsByCandidates(stub, params);
+        else if (func.equals("getResultsByParties"))
+            return getResultsByParties(stub, params);
 //        else if (func.equals("beginVoting"))
 //            return getCandidates(stub, params);
 //        else if (func.equals("endVoting"))
@@ -60,29 +60,41 @@ public class VotingChaincode extends ChaincodeBase {
         Voting voting = VotingCreator.createVoting();
         try {
             //candidates
-            JsonArray json;
-            json = new JsonArray();
+            JsonArray candidatesJsonArray = new JsonArray();
             int i = 0;
-            for (Candidate candidate: voting.getCandidates()) {
+            for (Candidate candidate : voting.getCandidates()) {
+                //putting single candidate object
                 stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
-                JsonObject obj = new JsonObject();
-                obj.addProperty("id", "" + i);
-                obj.addProperty("cid", "" + candidate.getCandidateId());
-                json.add(obj);
+
+                //putting id to list
+                JsonObject candidateJsonObject = new JsonObject();
+                candidateJsonObject.addProperty("id", "" + i);
+                candidateJsonObject.addProperty("cid", "" + candidate.getCandidateId());
+                candidatesJsonArray.add(candidateJsonObject);
                 i++;
             }
-            stub.putState("candidatesList", (new ObjectMapper()).writeValueAsBytes(json.toString()));
+            stub.putState("candidatesList", (new ObjectMapper()).writeValueAsBytes(candidatesJsonArray.toString()));
 
             //committees
             JsonArray committeesJsonArray = new JsonArray();
+            i = 0;
             for (Committee committee : voting.getCommittees()) {
                 //putting id to list
-                committeesJsonArray.add(committee.getCommitteeId());
+                JsonObject committeeJsonObject = new JsonObject();
+                committeeJsonObject.addProperty("id", "" + i);
+                committeeJsonObject.addProperty("cid", "" + committee.getCommitteeId());
+                committeesJsonArray.add(committeeJsonObject);
+                i++;
 
-                //putting single committee object into blockchain
+                //putting single committee object
                 stub.putState(committee.getCommitteeId(), (new ObjectMapper()).writeValueAsBytes(committee));
             }
             stub.putState("committeesList", (new ObjectMapper()).writeValueAsBytes(committeesJsonArray.toString()));
+
+            //votes empty list
+            JsonArray tokensArray = new JsonArray();
+            stub.putState("tokensList", (new ObjectMapper()).writeValueAsBytes(tokensArray.toString()));
+
 
         } catch (JsonProcessingException e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
@@ -102,20 +114,18 @@ public class VotingChaincode extends ChaincodeBase {
             String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
             JsonArray json = new JsonParser().parse(candidatesJsonString).getAsJsonArray();
             JsonArray jarray = new JsonArray();
-            for (int i = 0; i < json.size(); i++)
-            {
-                String c = json.get(i).getAsJsonObject().get("cid").getAsString();
-                String cdString = stub.getStringState(c);
-                objectMapper = new ObjectMapper();
-                Candidate cd = objectMapper.readValue(cdString, Candidate.class);
+            for (int i = 0; i < json.size(); i++) {
+                String candidateId = json.get(i).getAsJsonObject().get("cid").getAsString();
+                String candidateString = stub.getStringState(candidateId);
+                Candidate candidate = objectMapper.readValue(candidateString, Candidate.class);
                 JsonObject obj = new JsonObject();
-                obj.addProperty("candidateId", cd.candidateId);
-                obj.addProperty("firstName", cd.firstName);
-                obj.addProperty("lastName", cd.lastName);
-                obj.addProperty("party", cd.party);
-                obj.addProperty("partyNo", cd.partyNo);
-                obj.addProperty("listNo", cd.listNo);
-                obj.addProperty("age", cd.age);
+                obj.addProperty("candidateId", candidate.candidateId);
+                obj.addProperty("firstName", candidate.firstName);
+                obj.addProperty("lastName", candidate.lastName);
+                obj.addProperty("party", candidate.party);
+                obj.addProperty("partyNo", candidate.partyNo);
+                obj.addProperty("listNo", candidate.listNo);
+                obj.addProperty("age", candidate.age);
                 jarray.add(obj);
             }
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(jarray.toString()))));
@@ -141,8 +151,6 @@ public class VotingChaincode extends ChaincodeBase {
         }
     }
 
-
-
     //{"Args":["getCommittee","COM1"]}
     private Response getCommittee(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
@@ -153,7 +161,6 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             Committee committee = objectMapper.readValue(committeeString, Committee.class);
-            // JsonArray json = new JsonArray(candidatesJsonString);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(committee))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
@@ -190,9 +197,24 @@ public class VotingChaincode extends ChaincodeBase {
             if (checkString(tokenString))
                 return newErrorResponse(responseError(tokenString, ""));
 
-            //vote
+            //creating vote object
             Vote vote = new Vote(tokenId, candidateId);
             stub.putState(vote.getTokenId(), (new ObjectMapper()).writeValueAsBytes(vote));
+
+            //adding tokenId to tokensList
+            String tokensString = stub.getStringState("tokensList");
+            if (!checkString(tokensString))
+                return newErrorResponse(responseError("Nonexistent tokensList", ""));
+
+            String tokensJsonString = objectMapper.readValue(tokensString, String.class);
+            JsonArray tokensArray = new JsonParser().parse(tokensJsonString).getAsJsonArray();
+
+            JsonObject tokenJsonObject = new JsonObject();
+            tokenJsonObject.addProperty("id", "" + tokensArray.size() + 1);
+            tokenJsonObject.addProperty("tid", "" + vote.getTokenId());
+            tokensArray.add(tokenJsonObject);
+
+            stub.putState("tokensList", (new ObjectMapper()).writeValueAsBytes(tokensArray.toString()));
 
             //adding tokenId to committee
             committee.addVote(tokenId);
@@ -205,7 +227,6 @@ public class VotingChaincode extends ChaincodeBase {
         }
     }
 
-
     //{"Args":["getVote","123"]}
     private Response getVoteByTokenId(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
@@ -217,6 +238,125 @@ public class VotingChaincode extends ChaincodeBase {
             ObjectMapper objectMapper = new ObjectMapper();
             Vote vote = objectMapper.readValue(voteString, Vote.class);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(vote))));
+        } catch (Throwable e) {
+            return newErrorResponse(responseError(e.getMessage(), ""));
+        }
+    }
+
+    //{"Args":["getCommittees"]}
+    private Response getVotes(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 0)
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0", ""));
+        try {
+            String votesString = stub.getStringState("tokensList");
+            if (!checkString(votesString))
+                return newErrorResponse(responseError("Nonexistent votes list", ""));
+            ObjectMapper objectMapper = new ObjectMapper();
+            String votesJsonString = objectMapper.readValue(votesString, String.class);
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(
+                    (new ObjectMapper()).writeValueAsString(votesJsonString))));
+        } catch (Throwable e) {
+            return newErrorResponse(responseError(e.getMessage(), ""));
+        }
+    }
+
+    //{"Args":["getResultsByCandidates"]}
+    private Response getResultsByCandidates(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 0)
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0", ""));
+        try {
+            Map<String, Integer> resultsByCandidates = new HashMap<>();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            String candidatesString = stub.getStringState("candidatesList");
+            if (!checkString(candidatesString))
+                return newErrorResponse(responseError("Nonexistent candidates list", ""));
+            String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
+            JsonArray candidatesJsonArray = new JsonParser().parse(candidatesJsonString).getAsJsonArray();
+            for (int i = 0; i < candidatesJsonArray.size(); i++) {
+                String candidateId = candidatesJsonArray.get(i).getAsJsonObject().get("cid").getAsString();
+                resultsByCandidates.put(candidateId, 0);
+            }
+
+            String votesString = stub.getStringState("tokensList");
+            if (!checkString(votesString))
+                return newErrorResponse(responseError("Nonexistent votes list", ""));
+            String votesJsonString = objectMapper.readValue(votesString, String.class);
+            JsonArray votesJsonArray = new JsonParser().parse(votesJsonString).getAsJsonArray();
+            for (int i = 0; i < votesJsonArray.size(); i++) {
+                String tokenId = votesJsonArray.get(i).getAsJsonObject().get("tid").getAsString();
+                String voteString = stub.getStringState(tokenId);
+                Vote vote = objectMapper.readValue(voteString, Vote.class);
+
+                resultsByCandidates.put(vote.getCandidateId(), resultsByCandidates.get(vote.getCandidateId()) + 1);
+            }
+
+            JsonArray resultsJsonArray = new JsonArray();
+            for (String candidateId : resultsByCandidates.keySet()) {
+                JsonObject obj = new JsonObject();
+                obj.addProperty("candidateId", candidateId);
+                obj.addProperty("votes", resultsByCandidates.get(candidateId));
+                resultsJsonArray.add(obj);
+            }
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(resultsJsonArray.toString()))));
+
+        } catch (Throwable e) {
+            return newErrorResponse(responseError(e.getMessage(), ""));
+        }
+    }
+
+    //{"Args":["getResultsByParties"]}
+    private Response getResultsByParties(ChaincodeStub stub, List<String> args) {
+        if (args.size() != 0)
+            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0", ""));
+        try {
+            Map<String, Integer> resultsByParties = new HashMap<>();
+            List<Candidate> candidates = new ArrayList<>();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            String candidatesString = stub.getStringState("candidatesList");
+            if (!checkString(candidatesString))
+                return newErrorResponse(responseError("Nonexistent candidates list", ""));
+            String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
+            JsonArray candidatesJsonArray = new JsonParser().parse(candidatesJsonString).getAsJsonArray();
+            for (int i = 0; i < candidatesJsonArray.size(); i++) {
+                String candidateId = candidatesJsonArray.get(i).getAsJsonObject().get("cid").getAsString();
+                String candidateString = stub.getStringState(candidateId);
+                Candidate candidate = objectMapper.readValue(candidateString, Candidate.class);
+                if (!resultsByParties.containsKey(candidate.getParty()))
+                    resultsByParties.put(candidate.getParty(), 0);
+
+                candidates.add(candidate);
+            }
+
+            String votesString = stub.getStringState("tokensList");
+            if (!checkString(votesString))
+                return newErrorResponse(responseError("Nonexistent votes list", ""));
+            String votesJsonString = objectMapper.readValue(votesString, String.class);
+            JsonArray votesJsonArray = new JsonParser().parse(votesJsonString).getAsJsonArray();
+            for (int i = 0; i < votesJsonArray.size(); i++) {
+                String tokenId = votesJsonArray.get(i).getAsJsonObject().get("tid").getAsString();
+                String voteString = stub.getStringState(tokenId);
+                Vote vote = objectMapper.readValue(voteString, Vote.class);
+                String partyId = candidates.stream()
+                        .filter(candidate -> candidate.getCandidateId().equals(vote.getCandidateId()))
+                        .findFirst()
+                        .get().getParty();
+                resultsByParties.put(partyId, resultsByParties.get(partyId) + 1);
+            }
+
+            JsonArray resultsJsonArray = new JsonArray();
+            for (String partyId : resultsByParties.keySet()) {
+                JsonObject obj = new JsonObject();
+                obj.addProperty("partyId", partyId);
+                obj.addProperty("votes", resultsByParties.get(partyId));
+                resultsJsonArray.add(obj);
+            }
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(resultsJsonArray.toString()))));
+
+
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
