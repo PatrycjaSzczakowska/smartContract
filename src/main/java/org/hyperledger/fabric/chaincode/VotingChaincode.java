@@ -1,9 +1,7 @@
 package org.hyperledger.fabric.chaincode;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,29 +58,40 @@ public class VotingChaincode extends ChaincodeBase {
         Voting voting = VotingCreator.createVoting();
         try {
             //candidates
-            JsonArray json;
-            json = new JsonArray();
+            JsonArray candidatesJsonArray = new JsonArray();
             int i = 0;
             for (Candidate candidate: voting.getCandidates()) {
+                //putting single candidate object
                 stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
-                JsonObject obj = new JsonObject();
-                obj.addProperty("id", "" + i);
-                obj.addProperty("cid", "" + candidate.getCandidateId());
-                json.add(obj);
+
+                //putting id to list
+                JsonObject candidateJsonObject = new JsonObject();
+                candidateJsonObject.addProperty("id", "" + i);
+                candidateJsonObject.addProperty("cid", "" + candidate.getCandidateId());
+                candidatesJsonArray.add(candidateJsonObject);
                 i++;
             }
-            stub.putState("candidatesList", (new ObjectMapper()).writeValueAsBytes(json.toString()));
+            stub.putState("candidatesList", (new ObjectMapper()).writeValueAsBytes(candidatesJsonArray.toString()));
 
             //committees
             JsonArray committeesJsonArray = new JsonArray();
+            i=0;
             for (Committee committee : voting.getCommittees()) {
                 //putting id to list
-                committeesJsonArray.add(committee.getCommitteeId());
+                JsonObject committeeJsonObject = new JsonObject();
+                committeeJsonObject.addProperty("id", "" + i);
+                committeeJsonObject.addProperty("cid", "" + committee.getCommitteeId());
+                committeesJsonArray.add(committeeJsonObject);
 
-                //putting single committee object into blockchain
+                //putting single committee object
                 stub.putState(committee.getCommitteeId(), (new ObjectMapper()).writeValueAsBytes(committee));
             }
             stub.putState("committeesList", (new ObjectMapper()).writeValueAsBytes(committeesJsonArray.toString()));
+
+            //votes empty list
+            JsonArray tokensArray = new JsonArray();
+            stub.putState("tokensList", (new ObjectMapper()).writeValueAsBytes(tokensArray.toString()));
+
 
         } catch (JsonProcessingException e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
@@ -142,7 +151,6 @@ public class VotingChaincode extends ChaincodeBase {
     }
 
 
-
     //{"Args":["getCommittee","COM1"]}
     private Response getCommittee(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
@@ -153,7 +161,6 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Nonexistent voting", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             Committee committee = objectMapper.readValue(committeeString, Committee.class);
-            // JsonArray json = new JsonArray(candidatesJsonString);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(committee))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
@@ -190,9 +197,24 @@ public class VotingChaincode extends ChaincodeBase {
             if (checkString(tokenString))
                 return newErrorResponse(responseError(tokenString, ""));
 
-            //vote
+            //creating vote object
             Vote vote = new Vote(tokenId, candidateId);
             stub.putState(vote.getTokenId(), (new ObjectMapper()).writeValueAsBytes(vote));
+
+            //adding tokenId to tokensList
+            String tokensString = stub.getStringState("tokensList");
+            if (!checkString(tokensString))
+                return newErrorResponse(responseError("Nonexistent tokensList", ""));
+
+            String tokensJsonString = objectMapper.readValue(tokensString, String.class);
+            JsonArray tokensArray = new JsonParser().parse(tokensJsonString).getAsJsonArray();
+
+            JsonObject tokenJsonObject = new JsonObject();
+            tokenJsonObject.addProperty("id", "" + tokensArray.size()+1);
+            tokenJsonObject.addProperty("tid", "" + vote.getTokenId());
+            tokensArray.add(tokenJsonObject);
+
+            stub.putState("tokensList", (new ObjectMapper()).writeValueAsBytes(tokensArray.toString()));
 
             //adding tokenId to committee
             committee.addVote(tokenId);
@@ -204,7 +226,6 @@ public class VotingChaincode extends ChaincodeBase {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
-
 
     //{"Args":["getVote","123"]}
     private Response getVoteByTokenId(ChaincodeStub stub, List<String> args) {
