@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonParser;
 import org.hyperledger.fabric.chaincode.Models.*;
 import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.ChaincodeStub;
@@ -59,16 +60,18 @@ public class VotingChaincode extends ChaincodeBase {
         Voting voting = VotingCreator.createVoting();
         try {
             //candidates
-            JsonArray candidatesJsonArray;
-            candidatesJsonArray = new JsonArray();
-            for (Candidate candidate : voting.getCandidates()) {
-                //putting id to list
-                candidatesJsonArray.add(candidate.getCandidateId());
-
-                //putting single candidate object into blockchain
+            JsonArray json;
+            json = new JsonArray();
+            int i = 0;
+            for (Candidate candidate: voting.getCandidates()) {
                 stub.putState(candidate.getCandidateId(), (new ObjectMapper()).writeValueAsBytes(candidate));
+                JsonObject obj = new JsonObject();
+                obj.addProperty("id", "" + i);
+                obj.addProperty("cid", "" + candidate.getCandidateId());
+                json.add(obj);
+                i++;
             }
-            stub.putState("candidatesList", (new ObjectMapper()).writeValueAsBytes(candidatesJsonArray.toString()));
+            stub.putState("candidatesList", (new ObjectMapper()).writeValueAsBytes(json.toString()));
 
             //committees
             JsonArray committeesJsonArray = new JsonArray();
@@ -97,8 +100,25 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Nonexistent candidates list", ""));
             ObjectMapper objectMapper = new ObjectMapper();
             String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(
-                    (new ObjectMapper()).writeValueAsString(candidatesJsonString))));
+            JsonArray json = new JsonParser().parse(candidatesJsonString).getAsJsonArray();
+            JsonArray jarray = new JsonArray();
+            for (int i = 0; i < json.size(); i++)
+            {
+                String c = json.get(i).getAsJsonObject().get("cid").getAsString();
+                String cdString = stub.getStringState(c);
+                objectMapper = new ObjectMapper();
+                Candidate cd = objectMapper.readValue(cdString, Candidate.class);
+                JsonObject obj = new JsonObject();
+                obj.addProperty("candidateId", cd.candidateId);
+                obj.addProperty("firstName", cd.firstName);
+                obj.addProperty("lastName", cd.lastName);
+                obj.addProperty("party", cd.party);
+                obj.addProperty("partyNo", cd.partyNo);
+                obj.addProperty("listNo", cd.listNo);
+                obj.addProperty("age", cd.age);
+                jarray.add(obj);
+            }
+            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(jarray.toString()))));
         } catch (Throwable e) {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
@@ -120,6 +140,8 @@ public class VotingChaincode extends ChaincodeBase {
             return newErrorResponse(responseError(e.getMessage(), ""));
         }
     }
+
+
 
     //{"Args":["getCommittee","COM1"]}
     private Response getCommittee(ChaincodeStub stub, List<String> args) {

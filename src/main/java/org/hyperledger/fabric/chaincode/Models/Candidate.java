@@ -1,13 +1,13 @@
 package org.hyperledger.fabric.chaincode.Models;
 
 public class Candidate {
-    private String candidateId;
-    private String firstName;
-    private String lastName;
-    private String party;
-    private int partyNo; //number on the list
-    private int listNo; //number of the list
-    private int age;
+    public String candidateId;
+    public String firstName;
+    public String lastName;
+    public String party;
+    public int partyNo; //number on the list
+    public int listNo; //number of the list
+    public int age;
 
     public Candidate() {
     }
