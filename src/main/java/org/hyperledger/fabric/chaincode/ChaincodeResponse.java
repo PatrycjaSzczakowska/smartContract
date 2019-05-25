@@ -23,14 +23,17 @@ public class ChaincodeResponse {
 
     public static String responseSuccess(String successMessage) {
         try {
-            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(successMessage, "", true));
+            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(successMessage, "", true)).replace("/","");
         } catch (Throwable e) {
             return "{\"message\":'" + e.getMessage() + " BUT " + successMessage + " (NO COMMIT)', \"OK\":" + false + "}";
         }
     }
 
     public static String responseSuccessObject(String object) {
-        return "{\"message\":" + object + ", \"OK\":" + true + "}";
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("{\"message\":" );
+        stringBuilder.append(object);
+        return stringBuilder.toString().replace("/","");
     }
 
 
