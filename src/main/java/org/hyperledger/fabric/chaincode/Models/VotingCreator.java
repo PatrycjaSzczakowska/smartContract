@@ -6,25 +6,24 @@ import java.util.List;
 public class VotingCreator {
     //List<> candidates, List <Voter> voters
     public static Voting createVoting() {
+        String name = "Voting1";
         List<Candidate> candidates = createCandidates();
         List<Committee> committees = createCommittees();
 
-        return new Voting(candidates, committees);
+        return new Voting(name, candidates, committees);
     }
 
     private static List<Candidate> createCandidates() {
         List<Candidate> candidates = new ArrayList<>();
-        candidates.add(new Candidate("C1", "Tomasz", "Jasiak", "zieloni", 1, 1, 35));
-        candidates.add(new Candidate("C2", "Donald", "Kowalski", "czerwoni", 2, 1, 43));
-        candidates.add(new Candidate("C3", "Maria", "Nowacka", "zieloni", 1, 2, 30));
-
+        candidates.add(new Candidate("P1", "x", "x", "x", 1, 2, 3));
+        candidates.add(new Candidate("P2", "x", "x", "x", 1, 2, 3));
         return candidates;
     }
 
     private static List<Committee> createCommittees() {
         List<Committee> committees = new ArrayList<>();
-        committees.add(new Committee("COM1", 10));
-        committees.add(new Committee("COM2", 5));
+        committees.add(new Committee("COM1", 20));
+        committees.add(new Committee("COM2", 20));
         return committees;
     }
 }

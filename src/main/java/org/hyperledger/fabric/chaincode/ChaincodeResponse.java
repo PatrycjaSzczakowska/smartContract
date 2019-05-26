@@ -13,17 +13,17 @@ public class ChaincodeResponse {
         this.OK = OK;
     }
 
-    public static String responseError(String errorMessage) {
+    public static String responseError(String errorMessage, String code) {
         try {
-            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(errorMessage, "", false));
+            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(errorMessage, code, false));
         } catch (Throwable e) {
-            return "{\"message\":'" + e.getMessage() + " AND " + errorMessage + "', \"OK\":" + false + "}";
+            return "{\"code\":'" + code + "', \"message\":'" + e.getMessage() + " AND " + errorMessage + "', \"OK\":" + false + "}";
         }
     }
 
     public static String responseSuccess(String successMessage) {
         try {
-            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(successMessage, "", true));
+            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(successMessage, "", true)).replace("\\", "");
         } catch (Throwable e) {
             return "{\"message\":'" + e.getMessage() + " BUT " + successMessage + " (NO COMMIT)', \"OK\":" + false + "}";
         }
@@ -33,7 +33,7 @@ public class ChaincodeResponse {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("{\"message\":");
         stringBuilder.append(object);
-        return stringBuilder.toString().replaceAll("\\\\","");
+        return stringBuilder.toString().replace("\\", "");
     }
 
 
