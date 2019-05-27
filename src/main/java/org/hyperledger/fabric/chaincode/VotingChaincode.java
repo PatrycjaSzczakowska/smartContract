@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.hyperledger.fabric.chaincode.ChaincodeExceptions.NoObjectInStubException;
 import org.hyperledger.fabric.chaincode.Models.*;
 import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.ChaincodeStub;
@@ -59,12 +60,8 @@ public class VotingChaincode extends ChaincodeBase {
         if (args.size() != 0)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
         try {
-            String votingStatusString = stub.getStringState(VotingObjectsEnum.STATUS.getId());
-            if (!checkString(votingStatusString))
-                return newErrorResponse(responseError("Voting wasn't created"));
+            VotingStatusEnum votingStatus = VotingHelper.getStatus(stub);
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            VotingStatusEnum votingStatus = objectMapper.readValue(votingStatusString, VotingStatusEnum.class);
             if (VotingStatusEnum.CREATED.equals(votingStatus)) {
                 votingStatus = VotingStatusEnum.STARTED;
                 stub.putState(VotingObjectsEnum.STATUS.getId(), (new ObjectMapper()).writeValueAsBytes(votingStatus));
@@ -76,6 +73,8 @@ public class VotingChaincode extends ChaincodeBase {
             } else {
                 return newErrorResponse(responseError("Error during status changing"));
             }
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError(e.getObjectName() +" wasn't created"));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during votingStatus mapping"));
         }
@@ -86,12 +85,8 @@ public class VotingChaincode extends ChaincodeBase {
         if (args.size() != 0)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
         try {
-            String votingStatusString = stub.getStringState(VotingObjectsEnum.STATUS.getId());
-            if (!checkString(votingStatusString))
-                return newErrorResponse(responseError("Voting wasn't created"));
+            VotingStatusEnum votingStatus = VotingHelper.getStatus(stub);
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            VotingStatusEnum votingStatus = objectMapper.readValue(votingStatusString, VotingStatusEnum.class);
             if (VotingStatusEnum.STARTED.equals(votingStatus)) {
                 votingStatus = VotingStatusEnum.ENDED;
                 stub.putState(VotingObjectsEnum.STATUS.getId(), (new ObjectMapper()).writeValueAsBytes(votingStatus));
@@ -103,9 +98,12 @@ public class VotingChaincode extends ChaincodeBase {
             } else {
                 return newErrorResponse(responseError("Error during status changing"));
             }
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError(e.getObjectName() +" wasn't created"));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during votingStatus mapping"));
         }
+
     }
 
     //{"Args":["createVoting"]}
