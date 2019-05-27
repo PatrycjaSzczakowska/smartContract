@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.hyperledger.fabric.chaincode.ChaincodeExceptions.NoObjectInStubException;
 import org.hyperledger.fabric.chaincode.ChaincodeExceptions.ObjectInStubException;
 import org.hyperledger.fabric.chaincode.Models.*;
@@ -228,8 +227,6 @@ public class VotingChaincode extends ChaincodeBase {
         String tokenId = args.get(2);
 
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-
             VotingStatusEnum votingStatusEnum = VotingHelper.getStatus(stub);
 
             if (VotingStatusEnum.STARTED.equals(votingStatusEnum)) {

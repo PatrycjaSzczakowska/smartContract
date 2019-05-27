@@ -82,7 +82,7 @@ public class VotingHelper {
 
     public static void tokenExists (ChaincodeStub stub, String id) throws ObjectInStubException {
         String tokenString = stub.getStringState(id);
-        if (!checkString(tokenString))
+        if (checkString(tokenString))
             throw new ObjectInStubException("Token");
     }
 }
