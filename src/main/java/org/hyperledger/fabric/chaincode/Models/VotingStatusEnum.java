@@ -1,10 +1,10 @@
 package org.hyperledger.fabric.chaincode.Models;
 
-public enum VotingStatus {
+public enum VotingStatusEnum {
     CREATED,
     STARTED,
     ENDED;
 
-    VotingStatus() {
+    VotingStatusEnum() {
     }
 }
