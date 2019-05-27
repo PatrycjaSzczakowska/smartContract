@@ -7,10 +7,6 @@ import org.hyperledger.fabric.chaincode.ChaincodeExceptions.NoObjectInStubExcept
 import org.hyperledger.fabric.chaincode.ChaincodeExceptions.ObjectInStubException;
 import org.hyperledger.fabric.chaincode.Models.*;
 import org.hyperledger.fabric.shim.ChaincodeStub;
-
-import java.io.IOException;
-
-import static org.hyperledger.fabric.chaincode.ChaincodeResponse.responseError;
 import static org.hyperledger.fabric.chaincode.Utils.checkString;
 
 public class VotingHelper {
@@ -21,6 +17,12 @@ public class VotingHelper {
 
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(votingStatusString, VotingStatusEnum.class);
+    }
+
+
+    public static boolean canCreateVoting (ChaincodeStub stub) {
+        String votingStatusString = stub.getStringState(VotingObjectsEnum.STATUS.getId());
+        return !checkString(votingStatusString);
     }
 
     public static Committee getCommittee(ChaincodeStub stub, String id) throws Throwable {
