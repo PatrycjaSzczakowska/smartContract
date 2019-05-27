@@ -53,62 +53,62 @@ public class VotingChaincode extends ChaincodeBase {
             case "endVoting":
                 return endVoting(stub, params);
         }
-        return newErrorResponse(responseError("Unsupported method"));
+        return newErrorResponse(responseError(ErrorResponseEnum.UNSUPPORTED_METHOD.getText()));
     }
 
     private Response beginVoting(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         try {
             VotingStatusEnum votingStatus = VotingHelper.getStatus(stub);
 
             if (VotingStatusEnum.CREATED.equals(votingStatus)) {
                 votingStatus = VotingStatusEnum.STARTED;
                 stub.putState(VotingObjectsEnum.STATUS.getId(), (new ObjectMapper()).writeValueAsBytes(votingStatus));
-                return newSuccessResponse(responseSuccess("Voting started successfully\n"));
+                return newSuccessResponse(responseSuccess(SuccessResponseEnum.VOTING_STARTED.getText()));
             } else if (VotingStatusEnum.STARTED.equals(votingStatus)) {
-                return newErrorResponse(responseError("Voting was already started"));
+                return newErrorResponse(responseError(ErrorResponseEnum.VOTING_ALREADY_STARTED.getText()));
             } else if (VotingStatusEnum.ENDED.equals(votingStatus)) {
-                return newErrorResponse(responseError("Voting was already ended and you can't start it again"));
+                return newErrorResponse(responseError(ErrorResponseEnum.VOTING_ALREADY_ENDED.getText()));
             } else {
-                return newErrorResponse(responseError("Error during status changing"));
+                return newErrorResponse(responseError(ErrorResponseEnum.STATUS_ERROR.getText()));
             }
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError(e.getObjectName() + " wasn't created"));
+            return newErrorResponse(responseError(ErrorResponseEnum.VOTING_NOT_CREATED.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during votingStatus mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["endVoting","123"]}
     private Response endVoting(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         try {
             VotingStatusEnum votingStatus = VotingHelper.getStatus(stub);
 
             if (VotingStatusEnum.STARTED.equals(votingStatus)) {
                 votingStatus = VotingStatusEnum.ENDED;
                 stub.putState(VotingObjectsEnum.STATUS.getId(), (new ObjectMapper()).writeValueAsBytes(votingStatus));
-                return newSuccessResponse(responseSuccess("Voting ended successfully\n"));
+                return newSuccessResponse(responseSuccess(SuccessResponseEnum.VOTING_ENDED.getText()));
             } else if (VotingStatusEnum.CREATED.equals(votingStatus)) {
-                return newErrorResponse(responseError("Voting wasn't started"));
+                return newErrorResponse(responseError(ErrorResponseEnum.VOTING_NOT_STARTED.getText()));
             } else if (VotingStatusEnum.ENDED.equals(votingStatus)) {
-                return newErrorResponse(responseError("Voting was already ended"));
+                return newErrorResponse(responseError(ErrorResponseEnum.VOTING_ALREADY_ENDED.getText()));
             } else {
-                return newErrorResponse(responseError("Error during status changing"));
+                return newErrorResponse(responseError(ErrorResponseEnum.STATUS_ERROR.getText()));
             }
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError(e.getObjectName() + " wasn't created"));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during votingStatus mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["createVoting"]}
     private Response createVoting(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         if (VotingHelper.canCreateVoting(stub)) {
             Voting voting = VotingCreator.createVoting();
             try {
@@ -152,17 +152,17 @@ public class VotingChaincode extends ChaincodeBase {
                 stub.putState(VotingObjectsEnum.STATUS.getId(), (new ObjectMapper()).writeValueAsBytes(VotingStatusEnum.CREATED));
 
             } catch (JsonProcessingException e) {
-                return newErrorResponse(responseError("Error during creating voting"));
+                return newErrorResponse(responseError(ErrorResponseEnum.CREATE_VOTING_ERROR.getText()));
             }
-            return newSuccessResponse(responseSuccess("Voting added"));
+            return newSuccessResponse(responseSuccess(SuccessResponseEnum.VOTING_CREATED.getText()));
         }
-        return newErrorResponse(responseError("Voting already created"));
+        return newErrorResponse(responseError(ErrorResponseEnum.VOTING_ALREADY_CREATED.getText()));
     }
 
     //{"Args":["getCandidates"]}
     private Response getCandidates(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonArray json = VotingHelper.getCandidatesJsonArray(stub);
@@ -183,47 +183,47 @@ public class VotingChaincode extends ChaincodeBase {
             }
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(jarray.toString()))));
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError(e.getObjectName() + " wasn't created"));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during candidates mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["getCommittees"]}
     private Response getCommittees(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         try {
             String committeeString = stub.getStringState(VotingObjectsEnum.COMMITTEES.getId());
             if (!checkString(committeeString))
-                return newErrorResponse(responseError("Nonexistent committees list"));
+                return newErrorResponse(responseError("committeesList" + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
             ObjectMapper objectMapper = new ObjectMapper();
             String committeesJsonString = objectMapper.readValue(committeeString, String.class);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(
                     (new ObjectMapper()).writeValueAsString(committeesJsonString))));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during committees mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["getCommittee","COM1"]}
     private Response getCommittee(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_1.getText()));
         try {
             Committee committee = VotingHelper.getCommittee(stub, args.get(0));
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(committee))));
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during committee mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["vote","P1", "V10", "123"]}
     private Response vote(ChaincodeStub stub, List<String> args) {
         if (args.size() != 3)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 3"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_3.getText()));
 
         String candidateId = args.get(0);
         String committeeId = args.get(1);
@@ -236,7 +236,7 @@ public class VotingChaincode extends ChaincodeBase {
 
                 Committee committee = VotingHelper.getCommittee(stub, committeeId);
                 if (committee.getVotes().size() + 1 > committee.getVotesNo())
-                    return newErrorResponse(responseError("More votes cannot be added in this committee"));
+                    return newErrorResponse(responseError(ErrorResponseEnum.COMMITTEE_LIMIT.getText()));
 
                 //is candidate valid?
                 VotingHelper.candidateNotExists(stub, candidateId);
@@ -262,16 +262,16 @@ public class VotingChaincode extends ChaincodeBase {
                 committee.addVote(tokenId);
                 stub.putState(committee.getCommitteeId(), (new ObjectMapper()).writeValueAsBytes(committee));
 
-                return newSuccessResponse(responseSuccess("You have voted successfully"));
+                return newSuccessResponse(responseSuccess(SuccessResponseEnum.VOTED_SUCCESS.getText()));
             } else {
-                return newErrorResponse(responseError("Voting wasn't started"));
+                return newErrorResponse(responseError(ErrorResponseEnum.VOTING_NOT_STARTED.getText()));
             }
         } catch (ObjectInStubException e) {
-            return newErrorResponse(responseError("Existent " + e.getObjectName()));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.OBJECT_ERROR.getText()));
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during object mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
 
     }
@@ -279,52 +279,52 @@ public class VotingChaincode extends ChaincodeBase {
     //{"Args":["getVote","123"]}
     private Response getVoteByTokenId(ChaincodeStub stub, List<String> args) {
         if (args.size() != 1)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 1"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_1.getText()));
         try {
             Vote vote = VotingHelper.getVote(stub, args.get(0));
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(vote))));
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during vote mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["getVotingStatus","123"]}
     private Response getVotingStatus(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         try {
             VotingStatusEnum votingStatusEnum = VotingHelper.getStatus(stub);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(votingStatusEnum))));
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during voting status mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["getVotes"]}
     private Response getVotes(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         try {
             String votesString = stub.getStringState(VotingObjectsEnum.TOKENS.getId());
             if (!checkString(votesString))
-                return newErrorResponse(responseError("Nonexistent votes list"));
+                return newErrorResponse(responseError("votesList" + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
             ObjectMapper objectMapper = new ObjectMapper();
             String votesJsonString = objectMapper.readValue(votesString, String.class);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(
                     (new ObjectMapper()).writeValueAsString(votesJsonString))));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during votes mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["getResultsByCandidates"]}
     private Response getResultsByCandidates(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         try {
             if (VotingStatusEnum.ENDED.equals(VotingHelper.getStatus(stub))) {
                 Map<String, Integer> resultsByCandidates = new HashMap<>();
@@ -355,18 +355,18 @@ public class VotingChaincode extends ChaincodeBase {
                 }
                 return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(resultsJsonArray.toString()))));
             }
-            return newErrorResponse(responseError("Voting is not ended"));
+            return newErrorResponse(responseError(ErrorResponseEnum.VOTING_NOT_ENDED.getText()));
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during object mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
     //{"Args":["getResultsByParties"]}
     private Response getResultsByParties(ChaincodeStub stub, List<String> args) {
         if (args.size() != 0)
-            return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
+            return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_0.getText()));
         try {
             if (VotingStatusEnum.ENDED.equals(VotingHelper.getStatus(stub))) {
                 Map<String, Integer> resultsByParties = new HashMap<>();
@@ -407,11 +407,11 @@ public class VotingChaincode extends ChaincodeBase {
                 }
                 return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(resultsJsonArray.toString()))));
             }
-            return newErrorResponse(responseError("Voting is not ended"));
+            return newErrorResponse(responseError(ErrorResponseEnum.VOTING_NOT_ENDED.getText()));
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
+            return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during object mapping"));
+            return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
     }
 
