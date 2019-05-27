@@ -8,6 +8,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.hyperledger.fabric.chaincode.ChaincodeExceptions.NoObjectInStubException;
+import org.hyperledger.fabric.chaincode.ChaincodeExceptions.ObjectInStubException;
 import org.hyperledger.fabric.chaincode.Models.*;
 import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.ChaincodeStub;
@@ -74,7 +75,7 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Error during status changing"));
             }
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError(e.getObjectName() +" wasn't created"));
+            return newErrorResponse(responseError(e.getObjectName() + " wasn't created"));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during votingStatus mapping"));
         }
@@ -99,7 +100,7 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("Error during status changing"));
             }
         } catch (NoObjectInStubException e) {
-            return newErrorResponse(responseError(e.getObjectName() +" wasn't created"));
+            return newErrorResponse(responseError(e.getObjectName() + " wasn't created"));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during votingStatus mapping"));
         }
@@ -211,12 +212,10 @@ public class VotingChaincode extends ChaincodeBase {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1"));
         try {
-            String committeeString = stub.getStringState(args.get(0));
-            if (!checkString(committeeString))
-                return newErrorResponse(responseError("Nonexistent committee"));
-            ObjectMapper objectMapper = new ObjectMapper();
-            Committee committee = objectMapper.readValue(committeeString, Committee.class);
+            Committee committee = VotingHelper.getCommittee(stub, args.get(0));
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(committee))));
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during committee mapping"));
         }
@@ -234,30 +233,19 @@ public class VotingChaincode extends ChaincodeBase {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
 
-            //is voting started?
-            String votingStatusString = stub.getStringState(VotingObjectsEnum.STATUS.getId());
-            if (!checkString(votingStatusString))
-                return newErrorResponse(responseError("Voting wasn't created"));
+            VotingStatusEnum votingStatusEnum = VotingHelper.getStatus(stub);
 
-            VotingStatusEnum votingStatusEnum = objectMapper.readValue(votingStatusString, VotingStatusEnum.class);
             if (VotingStatusEnum.STARTED.equals(votingStatusEnum)) {
-                //is committee valid?
-                String committeeString = stub.getStringState(committeeId);
-                if (!checkString(committeeString))
-                    return newErrorResponse(responseError("Nonexistent committee"));
-                Committee committee = objectMapper.readValue(committeeString, Committee.class);
+
+                Committee committee = VotingHelper.getCommittee(stub, committeeId);
                 if (committee.getVotes().size() + 1 > committee.getVotesNo())
                     return newErrorResponse(responseError("More votes cannot be added in this committee"));
 
                 //is candidate valid?
-                String candidateString = stub.getStringState(candidateId);
-                if (!checkString(candidateString))
-                    return newErrorResponse(responseError("Nonexistent candidate"));
+                VotingHelper.candidateNotExists(stub, candidateId);
 
                 //is tokenId valid?
-                String tokenString = stub.getStringState(tokenId);
-                if (checkString(tokenString))
-                    return newErrorResponse(responseError("Vote with given tokenId already exists"));
+                VotingHelper.tokenExists(stub, tokenId);
 
                 //creating vote object
                 Vote vote = new Vote(tokenId, candidateId);
@@ -286,10 +274,14 @@ public class VotingChaincode extends ChaincodeBase {
             } else {
                 return newErrorResponse(responseError("Voting wasn't started"));
             }
-
+        } catch (ObjectInStubException e) {
+            return newErrorResponse(responseError("Existent " + e.getObjectName()));
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during object mapping"));
         }
+
     }
 
     //{"Args":["getVote","123"]}
@@ -297,12 +289,10 @@ public class VotingChaincode extends ChaincodeBase {
         if (args.size() != 1)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 1"));
         try {
-            String voteString = stub.getStringState(args.get(0));
-            if (!checkString(voteString))
-                return newErrorResponse(responseError("Nonexistent vote"));
-            ObjectMapper objectMapper = new ObjectMapper();
-            Vote vote = objectMapper.readValue(voteString, Vote.class);
+            Vote vote = VotingHelper.getVote(stub, args.get(0));
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(vote))));
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during vote mapping"));
         }
@@ -313,14 +303,12 @@ public class VotingChaincode extends ChaincodeBase {
         if (args.size() != 0)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
         try {
-            String votingStatusString = stub.getStringState(VotingObjectsEnum.STATUS.getId());
-            if (!checkString(votingStatusString))
-                return newErrorResponse(responseError("Nonexistent votingStatusEnum"));
-            ObjectMapper objectMapper = new ObjectMapper();
-            VotingStatusEnum votingStatusEnum = objectMapper.readValue(votingStatusString, VotingStatusEnum.class);
+            VotingStatusEnum votingStatusEnum = VotingHelper.getStatus(stub);
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(votingStatusEnum))));
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
         } catch (Throwable e) {
-            return newErrorResponse(responseError("Error during vote mapping"));
+            return newErrorResponse(responseError("Error during voting status mapping"));
         }
     }
 
