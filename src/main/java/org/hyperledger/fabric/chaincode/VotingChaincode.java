@@ -104,7 +104,6 @@ public class VotingChaincode extends ChaincodeBase {
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during votingStatus mapping"));
         }
-
     }
 
     //{"Args":["createVoting"]}
@@ -163,12 +162,8 @@ public class VotingChaincode extends ChaincodeBase {
         if (args.size() != 0)
             return newErrorResponse(responseError("Incorrect number of arguments, expecting 0"));
         try {
-            String candidatesString = stub.getStringState(VotingObjectsEnum.CANDIDATES.getId());
-            if (!checkString(candidatesString))
-                return newErrorResponse(responseError("Nonexistent candidates list"));
             ObjectMapper objectMapper = new ObjectMapper();
-            String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
-            JsonArray json = new JsonParser().parse(candidatesJsonString).getAsJsonArray();
+            JsonArray json = VotingHelper.getCandidatesJsonArray(stub);
             JsonArray jarray = new JsonArray();
             for (int i = 0; i < json.size(); i++) {
                 String candidateId = json.get(i).getAsJsonObject().get("cid").getAsString();
@@ -185,6 +180,8 @@ public class VotingChaincode extends ChaincodeBase {
                 jarray.add(obj);
             }
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(jarray.toString()))));
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError(e.getObjectName() + " wasn't created"));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during candidates mapping"));
         }
@@ -252,12 +249,7 @@ public class VotingChaincode extends ChaincodeBase {
                 stub.putState(vote.getTokenId(), (new ObjectMapper()).writeValueAsBytes(vote));
 
                 //adding tokenId to tokensList
-                String tokensString = stub.getStringState(VotingObjectsEnum.TOKENS.getId());
-                if (!checkString(tokensString))
-                    return newErrorResponse(responseError("Nonexistent tokensList"));
-
-                String tokensJsonString = objectMapper.readValue(tokensString, String.class);
-                JsonArray tokensArray = new JsonParser().parse(tokensJsonString).getAsJsonArray();
+                JsonArray tokensArray = VotingHelper.getVotesJsonArray(stub);
 
                 JsonObject tokenJsonObject = new JsonObject();
                 tokenJsonObject.addProperty("id", "" + tokensArray.size() + 1);
@@ -338,21 +330,13 @@ public class VotingChaincode extends ChaincodeBase {
 
             ObjectMapper objectMapper = new ObjectMapper();
 
-            String candidatesString = stub.getStringState(VotingObjectsEnum.CANDIDATES.getId());
-            if (!checkString(candidatesString))
-                return newErrorResponse(responseError("Nonexistent candidates list"));
-            String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
-            JsonArray candidatesJsonArray = new JsonParser().parse(candidatesJsonString).getAsJsonArray();
+            JsonArray candidatesJsonArray = VotingHelper.getCandidatesJsonArray(stub);
             for (int i = 0; i < candidatesJsonArray.size(); i++) {
                 String candidateId = candidatesJsonArray.get(i).getAsJsonObject().get("cid").getAsString();
                 resultsByCandidates.put(candidateId, 0);
             }
 
-            String votesString = stub.getStringState(VotingObjectsEnum.TOKENS.getId());
-            if (!checkString(votesString))
-                return newErrorResponse(responseError("Nonexistent votes list"));
-            String votesJsonString = objectMapper.readValue(votesString, String.class);
-            JsonArray votesJsonArray = new JsonParser().parse(votesJsonString).getAsJsonArray();
+            JsonArray votesJsonArray = VotingHelper.getVotesJsonArray(stub);
             for (int i = 0; i < votesJsonArray.size(); i++) {
                 String tokenId = votesJsonArray.get(i).getAsJsonObject().get("tid").getAsString();
                 String voteString = stub.getStringState(tokenId);
@@ -370,6 +354,8 @@ public class VotingChaincode extends ChaincodeBase {
             }
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(resultsJsonArray.toString()))));
 
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during object mapping"));
         }
@@ -385,11 +371,8 @@ public class VotingChaincode extends ChaincodeBase {
 
             ObjectMapper objectMapper = new ObjectMapper();
 
-            String candidatesString = stub.getStringState(VotingObjectsEnum.CANDIDATES.getId());
-            if (!checkString(candidatesString))
-                return newErrorResponse(responseError("Nonexistent candidates list"));
-            String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
-            JsonArray candidatesJsonArray = new JsonParser().parse(candidatesJsonString).getAsJsonArray();
+            JsonArray candidatesJsonArray = VotingHelper.getCandidatesJsonArray(stub);
+
             for (int i = 0; i < candidatesJsonArray.size(); i++) {
                 String candidateId = candidatesJsonArray.get(i).getAsJsonObject().get("cid").getAsString();
                 String candidateString = stub.getStringState(candidateId);
@@ -400,11 +383,7 @@ public class VotingChaincode extends ChaincodeBase {
                 candidates.add(candidate);
             }
 
-            String votesString = stub.getStringState(VotingObjectsEnum.TOKENS.getId());
-            if (!checkString(votesString))
-                return newErrorResponse(responseError("Nonexistent votes list"));
-            String votesJsonString = objectMapper.readValue(votesString, String.class);
-            JsonArray votesJsonArray = new JsonParser().parse(votesJsonString).getAsJsonArray();
+            JsonArray votesJsonArray = VotingHelper.getVotesJsonArray(stub);
             for (int i = 0; i < votesJsonArray.size(); i++) {
                 String tokenId = votesJsonArray.get(i).getAsJsonObject().get("tid").getAsString();
                 String voteString = stub.getStringState(tokenId);
@@ -425,7 +404,8 @@ public class VotingChaincode extends ChaincodeBase {
             }
             return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(resultsJsonArray.toString()))));
 
-
+        } catch (NoObjectInStubException e) {
+            return newErrorResponse(responseError("Nonexistent " + e.getObjectName()));
         } catch (Throwable e) {
             return newErrorResponse(responseError("Error during object mapping"));
         }

@@ -1,6 +1,8 @@
 package org.hyperledger.fabric.chaincode;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import org.hyperledger.fabric.chaincode.ChaincodeExceptions.NoObjectInStubException;
 import org.hyperledger.fabric.chaincode.ChaincodeExceptions.ObjectInStubException;
 import org.hyperledger.fabric.chaincode.Models.*;
@@ -8,6 +10,7 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 
 import java.io.IOException;
 
+import static org.hyperledger.fabric.chaincode.ChaincodeResponse.responseError;
 import static org.hyperledger.fabric.chaincode.Utils.checkString;
 
 public class VotingHelper {
@@ -34,6 +37,33 @@ public class VotingHelper {
             throw new NoObjectInStubException("Candidate");
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(candidateString, Candidate.class);
+    }
+
+    public static JsonArray getCandidatesJsonArray(ChaincodeStub stub) throws Throwable {
+        String candidatesString = stub.getStringState(VotingObjectsEnum.CANDIDATES.getId());
+        if (!checkString(candidatesString))
+            throw new NoObjectInStubException("candidatesList");
+        ObjectMapper objectMapper = new ObjectMapper();
+        String candidatesJsonString = objectMapper.readValue(candidatesString, String.class);
+        return new JsonParser().parse(candidatesJsonString).getAsJsonArray();
+    }
+
+    public static JsonArray getCommitteesJsonArray(ChaincodeStub stub) throws Throwable {
+        String committeesString = stub.getStringState(VotingObjectsEnum.COMMITTEES.getId());
+        if (!checkString(committeesString))
+            throw new NoObjectInStubException("committeesList");
+        ObjectMapper objectMapper = new ObjectMapper();
+        String candidatesJsonString = objectMapper.readValue(committeesString, String.class);
+        return new JsonParser().parse(candidatesJsonString).getAsJsonArray();
+    }
+
+    public static JsonArray getVotesJsonArray(ChaincodeStub stub) throws Throwable {
+        String votesString = stub.getStringState(VotingObjectsEnum.TOKENS.getId());
+        if (!checkString(votesString))
+            throw new NoObjectInStubException("tokenIdsList");
+        ObjectMapper objectMapper = new ObjectMapper();
+        String candidatesJsonString = objectMapper.readValue(votesString, String.class);
+        return new JsonParser().parse(candidatesJsonString).getAsJsonArray();
     }
 
     public static Vote getVote(ChaincodeStub stub, String id) throws Throwable {
