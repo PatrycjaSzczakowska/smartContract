@@ -20,7 +20,7 @@ public class VotingChaincode extends ChaincodeBase {
 
     @Override
     public Response init(ChaincodeStub stub) {
-        return newSuccessResponse(responseSuccess("Init"));
+        return newSuccessResponse(responseSuccess(SuccessResponseEnum.INIT.getText()));
     }
 
     @Override
@@ -181,7 +181,7 @@ public class VotingChaincode extends ChaincodeBase {
                 obj.addProperty("age", candidate.age);
                 jarray.add(obj);
             }
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(jarray.toString()))));
+            return newSuccessResponse(responseSuccessObject(jarray.toString()));
         } catch (NoObjectInStubException e) {
             return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {
@@ -199,8 +199,7 @@ public class VotingChaincode extends ChaincodeBase {
                 return newErrorResponse(responseError("committeesList" + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
             ObjectMapper objectMapper = new ObjectMapper();
             String committeesJsonString = objectMapper.readValue(committeeString, String.class);
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject(
-                    (new ObjectMapper()).writeValueAsString(committeesJsonString))));
+            return newSuccessResponse(responseSuccessObject(committeesJsonString));
         } catch (Throwable e) {
             return newErrorResponse(responseError(ErrorResponseEnum.MAPPING_ERROR.getText()));
         }
@@ -212,7 +211,7 @@ public class VotingChaincode extends ChaincodeBase {
             return newErrorResponse(responseError(ErrorResponseEnum.NUMBER_OF_ARGUMENTS_1.getText()));
         try {
             Committee committee = VotingHelper.getCommittee(stub, args.get(0));
-            return newSuccessResponse((new ObjectMapper()).writeValueAsBytes(responseSuccessObject((new ObjectMapper()).writeValueAsString(committee))));
+            return newSuccessResponse(responseSuccessObject((new ObjectMapper()).writeValueAsString(committee)));
         } catch (NoObjectInStubException e) {
             return newErrorResponse(responseError(e.getObjectName() + ErrorResponseEnum.NO_OBJECT_ERROR.getText()));
         } catch (Throwable e) {

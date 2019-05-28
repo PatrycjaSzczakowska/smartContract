@@ -17,9 +17,7 @@ public enum ErrorResponseEnum {
     OBJECT_ERROR(":The object has already been placed on the network"),
     CREATE_VOTING_ERROR("Error during creating voting"),
     COMMITTEE_LIMIT("Too many votes"),
-
     MAPPING_ERROR("Error during object mapping");
-
 
     private String text;
 
