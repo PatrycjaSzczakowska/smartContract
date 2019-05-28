@@ -251,7 +251,7 @@ public class VotingChaincode extends ChaincodeBase {
                 JsonArray tokensArray = VotingHelper.getVotesJsonArray(stub);
 
                 JsonObject tokenJsonObject = new JsonObject();
-                tokenJsonObject.addProperty("id", "" + tokensArray.size() + 1);
+                tokenJsonObject.addProperty("id", "" + tokensArray.size());
                 tokenJsonObject.addProperty("tid", "" + vote.getTokenId());
                 tokensArray.add(tokenJsonObject);
 
