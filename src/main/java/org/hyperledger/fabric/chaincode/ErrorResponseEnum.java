@@ -19,7 +19,6 @@ public enum ErrorResponseEnum {
     COMMITTEE_LIMIT("Too many votes"),
     MAPPING_ERROR("Error during object mapping");
 
-
     private String text;
 
     ErrorResponseEnum(String text) {

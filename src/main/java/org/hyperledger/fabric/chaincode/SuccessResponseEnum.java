@@ -1,6 +1,7 @@
 package org.hyperledger.fabric.chaincode;
 
 public enum SuccessResponseEnum {
+    INIT("Init"),
     VOTING_STARTED("The voting was successfully started"),
     VOTING_ENDED("The voting was successfully ended"),
     VOTING_CREATED("The voting was successfully created"),

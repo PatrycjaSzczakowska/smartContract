@@ -1,37 +1,24 @@
 package org.hyperledger.fabric.chaincode;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 
 class ChaincodeResponse {
-    public String message;
-    public String code;
-    public boolean OK;
-
-    private ChaincodeResponse(String message, String code, boolean OK) {
-        this.message = message;
-        this.code = code;
-        this.OK = OK;
-    }
-
     static String responseError(String errorMessage) {
-        try {
-            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(errorMessage, "", false));
-        } catch (Throwable e) {
-            return "{\"code\":'" + "" + "', \"message\":'" + e.getMessage() + " AND " + errorMessage + "', \"OK\":" + false + "}";
-        }
+        return response(errorMessage,false);
+
     }
 
     static String responseSuccess(String successMessage) {
-        try {
-            return (new ObjectMapper()).writeValueAsString(new ChaincodeResponse(successMessage, "", true));
-        } catch (Throwable e) {
-            return "{\"message\":'" + e.getMessage() + " BUT " + successMessage + " (NO COMMIT)', \"OK\":" + false + "}";
-        }
+        return response(successMessage,true);
     }
 
-    static String responseSuccessObject(String object) {
-        return "{\"message\":" + object + ", \"OK\":" + true + "}";
+    private static String response(String message, boolean isOk) {
+        JsonObject response = new JsonObject();
+        response.addProperty("message", message);
+        response.addProperty("OK", isOk);
+        return response.toString().replaceAll("\\\\","");
     }
+
 }
 
 
