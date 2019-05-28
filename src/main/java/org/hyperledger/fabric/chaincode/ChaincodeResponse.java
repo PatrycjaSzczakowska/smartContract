@@ -16,7 +16,7 @@ class ChaincodeResponse {
         JsonObject response = new JsonObject();
         response.addProperty("message", message);
         response.addProperty("OK", isOk);
-        return response.toString();
+        return response.toString().replaceAll("\\\\","");
     }
 
 }
